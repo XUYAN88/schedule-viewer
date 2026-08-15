@@ -675,6 +675,16 @@ function loadData() {
         }
       });
     });
+    // 门店排序：上海 → 杭州 → 深圳 → 其他
+    var CITY_RANK = { "上海": 0, "杭州": 1, "深圳": 2 };
+    stores.sort(function (a, b) {
+      var ca = (a.name || "").split("·")[0];
+      var cb = (b.name || "").split("·")[0];
+      var ra = CITY_RANK[ca] !== undefined ? CITY_RANK[ca] : 99;
+      var rb = CITY_RANK[cb] !== undefined ? CITY_RANK[cb] : 99;
+      if (ra !== rb) return ra - rb;
+      return (a.name || "").localeCompare(b.name || "", "zh");
+    });
     if (!stores.length) throw new Error("门店列表为空");
     // 逐个门店实时拉取档期
     var tasks = stores.map(function (st, i) {
