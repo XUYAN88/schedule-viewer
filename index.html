@@ -544,7 +544,7 @@ function renderAll() {
   if (state.storeIndex === ALL_STORES) {
     // 汇总视图：隐藏日历，显示整合列表
     calCard.style.display = "none";
-    document.getElementById("listCardTitle").textContent = "全部门店不可预约日期";
+    document.getElementById("listCardTitle").textContent = "全部门店不可预约日期（仅显示上海 杭州 深圳）";
     renderAllStores();
   } else {
     var s = curStore();
