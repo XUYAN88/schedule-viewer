@@ -425,27 +425,6 @@ function renderStoreBar() {
   });
 }
 
-// ============ 变化检测（按午宴/晚宴维度） ============
-function diffMeal(prevList, curList) {
-  var changed = {};
-  var prevSet = {}, curSet = {};
-  (prevList || []).forEach(function (d) { prevSet[d] = 1; });
-  (curList || []).forEach(function (d) { curSet[d] = 1; });
-  (curList || []).forEach(function (d) { if (!prevSet[d]) changed[d] = "closed"; });
-  (prevList || []).forEach(function (d) { if (!curSet[d]) changed[d] = "open"; });
-  return changed;
-}
-
-function diffStore(prevStore, curStoreData) {
-  var changed = {};
-  if (!prevStore) return changed;
-  ["lunch_closed_dates", "dinner_closed_dates"].forEach(function (field) {
-    var sub = diffMeal(prevStore[field], curStoreData[field]);
-    Object.keys(sub).forEach(function (d) { changed[d] = sub[d]; });
-  });
-  return changed;
-}
-
 // ============ 日历渲染 ============
 function renderCalendar() {
   var grid = document.getElementById("calGrid");
@@ -591,6 +570,66 @@ function renderAllStores() {
   });
 }
 
+// ============ 档期变化对比（与上次数据对比） ============
+// 对比两个门店数据，返回该店的变化数组 [{store_id, date, status, detail}]
+function compareStore(prevStore, curStoreData) {
+  var changes = [];
+  if (!prevStore || !curStoreData) return changes;
+  var storeId = curStoreData.store_id;
+  ["lunch", "dinner"].forEach(function (meal) {
+    var prevList = prevStore[meal + "_closed_dates"] || [];
+    var curList = curStoreData[meal + "_closed_dates"] || [];
+    var prevSet = {}, curSet = {};
+    prevList.forEach(function (d) { prevSet[d] = 1; });
+    curList.forEach(function (d) { curSet[d] = 1; });
+    var mealName = meal === "lunch" ? "午宴" : "晚宴";
+    // 新增不可约：之前可约/未开放 → 现在不可约
+    curList.forEach(function (d) {
+      if (!prevSet[d]) changes.push({ store_id: storeId, date: d, status: "closed", detail: "新增不可约（" + mealName + "）" });
+    });
+    // 恢复可约：之前不可约 → 现在可约
+    prevList.forEach(function (d) {
+      if (!curSet[d]) changes.push({ store_id: storeId, date: d, status: "open", detail: "恢复可约（" + mealName + "）" });
+    });
+  });
+  return changes;
+}
+
+// 对比全部门店，返回总 changes（旧基准数据 vs 新数据）
+function compareAllStores(prevData, newData) {
+  var changes = [];
+  if (!prevData || !prevData.stores) return changes;
+  var prevMap = {};
+  prevData.stores.forEach(function (s) { prevMap[s.store_id] = s; });
+  (newData.stores || []).forEach(function (s) {
+    changes = changes.concat(compareStore(prevMap[s.store_id], s));
+  });
+  return changes;
+}
+
+// 从 localStorage 读上次数据（作为对比基准）
+function readPrevData() {
+  try {
+    var c = JSON.parse(localStorage.getItem(LS_CACHE));
+    return c && c.stores ? c : null;
+  } catch (e) { return null; }
+}
+
+// 应用变化到当前视图（重新计算 changedDates + 横幅）
+function applyChanges(changes) {
+  var d = state.data;
+  d.changes = changes || [];
+  var isSummary = state.storeIndex === ALL_STORES;
+  var s = isSummary ? null : curStore();
+  var changed = {};
+  (d.changes || []).forEach(function (c) {
+    if (!isSummary && s && c.store_id === s.store_id) changed[c.date] = c.status;
+  });
+  state.changedDates = changed;
+  renderBanner();
+  renderAll();
+}
+
 // ============ 加载 / 刷新状态 ============
 function showLoading() { document.getElementById("loadingMask").classList.remove("hide"); }
 function hideLoading() { document.getElementById("loadingMask").classList.add("hide"); }
@@ -660,25 +699,32 @@ function applyData() {
   var s = isSummary ? null : curStore();
   document.getElementById("updatedAt").textContent = "更新于 " + (d.updated_at || "—");
 
-  // 变化：服务端 changes（按门店）+ 用户上次所见对比
-  var allChanged = {};   // store_id -> {date: status}
+  // 变化：服务端/对比生成的 changes（按门店）
   var changed = {};
   (d.changes || []).forEach(function (c) {
-    if (!allChanged[c.store_id]) allChanged[c.store_id] = {};
-    allChanged[c.store_id][c.date] = c.status;
     if (!isSummary && s && c.store_id === s.store_id) changed[c.date] = c.status;
   });
-  var lsStore = state.lastSeen && state.lastSeen.stores ? state.lastSeen.stores[state.storeIndex] : null;
-  var ls = isSummary ? {} : diffStore(lsStore, s);
-  Object.keys(ls).forEach(function (k) { if (!changed[k]) changed[k] = ls[k]; });
   state.changedDates = changed;
 
-  // 横幅：汇总所有门店的变化
+  renderBanner();
+  renderStoreBar();
+  renderAll();
+  saveSnapshot();
+}
+
+// 横幅：汇总所有门店的变化
+function renderBanner() {
+  var d = state.data || { changes: [], stores: [] };
   var banner = document.getElementById("banner");
   var bannerText = document.getElementById("bannerText");
   var parts = [];
+  var allChanged = {};
+  (d.changes || []).forEach(function (c) {
+    if (!allChanged[c.store_id]) allChanged[c.store_id] = {};
+    allChanged[c.store_id][c.date] = c.status;
+  });
   var storeNameMap = {};
-  state.data.stores.forEach(function (st) { storeNameMap[st.store_id] = st.store_name; });
+  d.stores.forEach(function (st) { storeNameMap[st.store_id] = st.store_name; });
   Object.keys(allChanged).forEach(function (sid) {
     var perStore = allChanged[sid];
     var closed = [], open = [];
@@ -693,32 +739,14 @@ function applyData() {
     if (open.length) sub.push("恢复可预约 <b class='open'>" + open.map(function (x) { return x.slice(5).replace("-", "月") + "日"; }).join("、") + "</b>");
     if (sub.length) parts.push("【" + name + "】" + sub.join("；"));
   });
-  var lsKeys = Object.keys(ls);
-  if (lsKeys.length) {
-    var lc = [], lo = [];
-    lsKeys.forEach(function (date) {
-      if (ls[date] === "closed") lc.push(date);
-      else lo.push(date);
-    });
-    lc.sort(); lo.sort();
-    var sub2 = [];
-    if (lc.length) sub2.push("新增不可预约 <b class='closed'>" + lc.map(function (x) { return x.slice(5).replace("-", "月") + "日"; }).join("、") + "</b>");
-    if (lo.length) sub2.push("恢复可预约 <b class='open'>" + lo.map(function (x) { return x.slice(5).replace("-", "月") + "日"; }).join("、") + "</b>");
-    if (sub2.length) parts.push("【" + s.store_name + "】较上次查看" + sub2.join("；"));
-  }
 
   if (parts.length) {
-    var prefix = state.lastSeen ? "较上次查看，档期有更新：" : "最近档期有变动：";
-    bannerText.innerHTML = prefix + parts.join("<br>");
+    bannerText.innerHTML = "较上次数据，档期有更新：<br>" + parts.join("<br>");
     banner.className = "banner show";
   } else {
     banner.className = "banner";
     bannerText.innerHTML = "";
   }
-
-  renderStoreBar();
-  renderAll();
-  saveSnapshot();
 }
 
 function saveSnapshot() {
@@ -776,16 +804,14 @@ function loadData() {
     return Promise.all(tasks).then(function (results) {
       var realStores = results.filter(Boolean);
       if (!realStores.length) throw new Error("实时数据获取失败");
+      var prevData = readPrevData();
       state.data = {
         updated_at: fmtDate(new Date()) + " " + pad(new Date().getHours()) + ":" + pad(new Date().getMinutes()) + "（实时）",
         stores: realStores,
-        changes: []
+        changes: compareAllStores(prevData, { stores: realStores })
       };
       if (savedIdx === ALL_STORES) state.storeIndex = ALL_STORES;
       else if (savedIdx !== null && realStores[savedIdx]) state.storeIndex = savedIdx;
-      try {
-        state.lastSeen = JSON.parse(localStorage.getItem(LS_KEY));
-      } catch (e) { state.lastSeen = null; }
       hideLoading();
       hideRefresh();
       applyData();
@@ -799,9 +825,6 @@ function loadData() {
       state.data = json;
       if (savedIdx === ALL_STORES) state.storeIndex = ALL_STORES;
       else if (savedIdx !== null && json.stores[savedIdx]) state.storeIndex = savedIdx;
-      try {
-        state.lastSeen = JSON.parse(localStorage.getItem(LS_KEY));
-      } catch (e) { state.lastSeen = null; }
       hideLoading();
       hideRefresh();
       applyData();
@@ -823,10 +846,14 @@ function refreshStoreData(storeId) {
     if (!fresh) return;
     for (var i = 0; i < state.data.stores.length; i++) {
       if (state.data.stores[i].store_id === storeId) {
+        var prev = state.data.stores[i];
         state.data.stores[i] = fresh;
-        state.changedDates = {};
-        renderStoreBar();
-        renderAll();
+        // 与刷新前的数据对比，更新该店变化
+        var storeChanges = compareStore(prev, fresh);
+        var d = state.data;
+        d.changes = (d.changes || []).filter(function (c) { return c.store_id !== storeId; })
+          .concat(storeChanges);
+        applyChanges(d.changes);
         saveSnapshot();
         return;
       }
@@ -838,6 +865,7 @@ function refreshStoreData(storeId) {
 // 刷新全部门店实时数据（汇总视图用）
 function refreshAllStores() {
   showRefresh();
+  var prevSnapshot = JSON.parse(JSON.stringify(state.data)); // 刷新前基准
   var tasks = state.data.stores.map(function (s, i) {
     return new Promise(function (resolve) {
       setTimeout(function () {
@@ -849,9 +877,8 @@ function refreshAllStores() {
     });
   });
   return Promise.all(tasks).then(function () {
-    state.changedDates = {};
-    renderStoreBar();
-    renderAll();
+    state.data.changes = compareAllStores(prevSnapshot, state.data);
+    applyChanges(state.data.changes);
     saveSnapshot();
   }).catch(function () {})
     .then(function () { hideRefresh(); });
