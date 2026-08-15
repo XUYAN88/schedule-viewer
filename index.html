@@ -33,17 +33,22 @@
 
   /* ===== 预订规则提示 ===== */
   .rule-bar {
-    margin:10px 12px; padding:11px 14px; border-radius:12px;
+    margin:10px 12px; padding:12px 14px; border-radius:16px;
     background:linear-gradient(135deg,#fdf6ec,#fbf0dd); border:1px solid #ecd9b4;
-    font-size:12px; line-height:1.8; color:#7a5c22;
+    font-size:12px; line-height:1.9; color:#7a5c22;
+    box-shadow:0 2px 12px rgba(60,40,20,.05);
   }
-  .rule-bar .t { font-weight:700; display:flex; align-items:center; gap:5px; margin-bottom:2px; }
+  .rule-bar .t { font-weight:700; display:flex; align-items:center; gap:6px; margin-bottom:4px; font-size:13px; }
+  .rule-bar .row { display:flex; align-items:baseline; gap:8px; }
+  .rule-bar .row .time { min-width:46px; font-weight:700; color:#b8432f; }
+  .rule-bar .row .desc { color:#8a6d3d; }
   .rule-bar b { color:#b8432f; }
+  .rule-bar .tip { color:#a08a5c; font-size:11px; margin-top:4px; padding-top:6px; border-top:1px dashed #ecd9b4; }
 
   /* ===== 门店切换 ===== */
   .store-bar {
-    display:flex; gap:8px; overflow-x:auto; padding:12px 14px; background:#fff;
-    border-bottom:1px solid #f0ece6; -webkit-overflow-scrolling:touch;
+    display:flex; gap:8px; overflow-x:auto; padding:12px;
+    background:#fff; border-bottom:1px solid #f0ece6; -webkit-overflow-scrolling:touch;
     position:sticky; top:0; z-index:10; box-shadow:0 2px 8px rgba(0,0,0,.04);
   }
   .store-bar::-webkit-scrollbar { display:none; }
@@ -76,10 +81,11 @@
     box-shadow:0 2px 12px rgba(60,40,20,.06); padding:16px;
   }
   .card h2 {
-    font-size:14px; font-weight:700; margin-bottom:12px; display:flex; align-items:center; gap:7px;
+    font-size:14px; font-weight:700; margin-bottom:12px; display:flex; align-items:center; gap:8px;
     color:#3d3128;
   }
-  .card h2 .dot { width:7px; height:7px; border-radius:50%; display:inline-block; box-shadow:0 0 0 3px rgba(0,0,0,.05); }
+  .card h2 .dot { width:8px; height:8px; border-radius:50%; display:inline-block; box-shadow:0 0 0 3px rgba(0,0,0,.05); flex:0 0 auto; }
+  .card h2 .store-name { margin-left:auto; font-size:11px; color:#b5aa9c; font-weight:400; white-space:nowrap; }
 
   /* ===== 图例 ===== */
   .legend { display:flex; gap:12px; font-size:11px; color:#8d847a; margin-bottom:12px; flex-wrap:wrap; }
@@ -138,22 +144,27 @@
   .cal-hint { font-size:10px; color:#b5aa9c; margin-top:8px; text-align:center; letter-spacing:.5px; }
 
   /* ===== 不可约日期（横向排列标签） ===== */
-  .city-group { margin-bottom:14px; }
+  .city-group { margin-bottom:16px; }
   .city-group:last-child { margin-bottom:0; }
   .city-title {
-    font-size:12px; font-weight:700; color:#a83226; letter-spacing:2px;
-    padding:4px 0 8px; display:flex; align-items:center; gap:6px;
+    font-size:13px; font-weight:700; color:#a83226; letter-spacing:2px;
+    padding:6px 0 10px; display:flex; align-items:center; gap:8px;
   }
-  .city-title::before { content:""; width:4px; height:12px; border-radius:2px; background:linear-gradient(180deg,#b8432f,#9c3523); }
+  .city-title::before { content:""; width:4px; height:14px; border-radius:2px; background:linear-gradient(180deg,#b8432f,#9c3523); }
+  .city-title .count {
+    margin-left:auto; font-size:10px; font-weight:400; color:#c4baac; letter-spacing:0;
+    background:#f7f4ef; padding:2px 8px; border-radius:10px;
+  }
   .store-sub {
-    font-size:11px; color:#8d847a; font-weight:600; margin:8px 0 5px 2px;
-    display:flex; align-items:center; gap:5px;
+    font-size:11px; color:#8d847a; font-weight:600; margin:10px 0 6px 4px;
+    display:flex; align-items:center; gap:6px;
   }
-  .store-sub::before { content:""; width:3px; height:3px; border-radius:50%; background:#c4baac; }
-  .chips-wrap { display:flex; flex-wrap:wrap; gap:6px; }
+  .store-sub::before { content:""; width:4px; height:4px; border-radius:50%; background:#c4baac; }
+  .store-sub .s-count { margin-left:auto; font-size:10px; color:#c4baac; font-weight:400; }
+  .chips-wrap { display:flex; flex-wrap:wrap; gap:6px; padding-left:4px; }
   .closed-day {
     display:inline-flex; align-items:center;
-    padding:6px 10px; background:#fdf7f5; border:1px solid #f3ddd8;
+    padding:6px 11px; background:#fdf7f5; border:1px solid #f3ddd8;
     border-radius:12px; transition:all .15s;
   }
   .closed-day:active { transform:scale(.95); }
@@ -167,7 +178,7 @@
   .closed-day .m.lunch { background:linear-gradient(135deg,#4a8fd4,#3b7cc0); }
   .closed-day .m.dinner { background:linear-gradient(135deg,#8e6bb8,#7b57a8); }
   .closed-day .m.none { background:#e57373; }
-  .none { font-size:12px; color:#b5aa9c; padding:8px 0; text-align:center; }
+  .none { font-size:12px; color:#b5aa9c; padding:10px 0; text-align:center; }
 
   .footer { text-align:center; font-size:10px; color:#c4baac; padding:16px 0 26px; letter-spacing:1px; }
 </style>
@@ -192,9 +203,9 @@
 <!-- 预订规则说明 -->
 <div class="rule-bar">
   <div class="t">📌 预订规则</div>
-  <div>午宴：当天 <b>11:50</b> 开场前停止预订</div>
-  <div>晚宴：当天 <b>18:50</b> 开场前停止预订</div>
-  <div style="color:#9a7d45;font-size:11px;margin-top:2px">开场前未预定的当天场次无法预约，请提前安排</div>
+  <div class="row"><span class="time">午宴</span><span class="desc">当天 <b>11:50</b> 开场前停止预订</span></div>
+  <div class="row"><span class="time">晚宴</span><span class="desc">当天 <b>18:50</b> 开场前停止预订</span></div>
+  <div class="tip">开场前未预定的当天场次无法预约，请提前安排</div>
 </div>
 
 <!-- 不可预约日期（置顶） -->
@@ -205,7 +216,7 @@
 
 <!-- 日历 -->
 <div class="card" id="calCard">
-  <h2><span class="dot" style="background:#4caf7d"></span>预约日历 <span id="curStore" style="font-size:11px;color:#b5aa9c;font-weight:400;margin-left:auto"></span></h2>
+  <h2><span class="dot" style="background:#4caf7d"></span>预约日历 <span class="store-name" id="curStore"></span></h2>
   <div class="legend">
     <span><i class="i-open"></i>可预约</span>
     <span><i class="i-half"></i>部分不可约</span>
@@ -493,6 +504,7 @@ function renderAllStores() {
   var el = document.getElementById("closedDays");
   var todayStr = fmtDate(new Date());
   var CITY_ORDER = ["上海", "杭州", "深圳"];
+  var cityCounts = {};
 
   // 按城市分组
   var groups = {};
@@ -508,7 +520,8 @@ function renderAllStores() {
   CITY_ORDER.forEach(function (city) {
     var stores = groups[city];
     if (!stores) return;
-    html += '<div class="city-group"><div class="city-title">' + city + "</div>";
+    var cityDays = 0;
+    html += '<div class="city-group"><div class="city-title">' + city + '<span class="count" id="cityCount-' + city + '"></span></div>';
     stores.forEach(function (s) {
       // 聚合该门店不可约日期 -> 按天（已过期的日期/餐别不显示，只显示明天及以后）
       var dayMap = {};
@@ -516,8 +529,8 @@ function renderAllStores() {
       (s.dinner_closed_dates || []).forEach(function (d) { if (d > todayStr && !mealExpired(d, "dinner")) { if (!dayMap[d]) dayMap[d] = {}; dayMap[d].dinner = true; } });
       var days = Object.keys(dayMap).sort();
       if (!days.length) return;
-      totalDays += days.length;
-      html += '<div class="store-sub">' + s.store_name + "</div>";
+      cityDays += days.length;
+      html += '<div class="store-sub">' + s.store_name + '<span class="s-count">' + days.length + " 天不可约</span></div>";
       var MAX = 15;
       var show = days.slice(0, MAX);
       html += '<div class="chips-wrap">';
@@ -532,10 +545,18 @@ function renderAllStores() {
       html += "</div>";
       if (days.length > MAX) html += '<div class="none">...共 ' + days.length + " 天</div>";
     });
+    // 城市统计（渲染后填充）
     html += "</div>";
+    totalDays += cityDays;
+    cityCounts[city] = cityDays;
   });
 
   el.innerHTML = totalDays ? html : '<div class="none">✅ 近期均可预约</div>';
+  // 填充城市统计徽标
+  Object.keys(cityCounts).forEach(function (c) {
+    var el2 = document.getElementById("cityCount-" + c);
+    if (el2 && cityCounts[c] > 0) el2.textContent = cityCounts[c] + " 天";
+  });
 }
 
 // ============ 页面初始化 ============
