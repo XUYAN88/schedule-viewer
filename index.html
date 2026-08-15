@@ -5,92 +5,142 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <title>档期查询</title>
 <style>
+  :root {
+    --red:#a83226; --red-deep:#8c2a20; --red-dark:#7a231a;
+    --gold:#e8c98a; --gold-deep:#d4a95e;
+    --bg:#f7f5f2; --card:#ffffff; --line:#f0ece6;
+    --ink:#2d3436; --ink-soft:#6b5d4e; --muted:#8d847a; --faint:#b5aa9c;
+    --open:#3e9c6e; --full:#e8a13c; --closed:#e5645c;
+    --shadow:0 4px 18px rgba(60,40,20,.07);
+  }
   * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html { -webkit-text-size-adjust:100%; }
   body {
     font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
-    background:#f7f5f2; color:#2d3436; font-size:13px;
-    -webkit-font-smoothing:antialiased;
+    background:var(--bg); color:var(--ink); font-size:14px; line-height:1.55;
+    -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
   }
+  button { font-family:inherit; touch-action:manipulation; }
+  /* ===== 移动端触控优化 ===== */
+  html, body { overscroll-behavior-y:contain; }
+  button, .day, .closed-day, .store-btn, .cal-nav button {
+    -webkit-touch-callout:none;
+    -webkit-user-select:none; user-select:none;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .day { transition:transform .1s ease; }
+  .day:active { transform:scale(.92); }
+  .store-btn, .cal-nav button, .closed-day { touch-action:manipulation; }
+  .store-bar { scroll-snap-type:x proximity; }
+  .store-btn { scroll-snap-align:start; }
+
+  /* ===== 加载遮罩 & 顶部刷新提示 ===== */
+  .loading-mask {
+    position:fixed; inset:0; z-index:100; background:rgba(247,245,242,.97);
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px;
+    color:var(--muted); font-size:13px; letter-spacing:1px;
+  }
+  .loading-mask.hide { display:none; }
+  .spinner {
+    width:38px; height:38px; border-radius:50%; border:3px solid #f0e6d8;
+    border-top-color:#b8432f; animation:spin .8s linear infinite;
+  }
+  @keyframes spin { to { transform:rotate(360deg); } }
+  .refresh-bar {
+    position:fixed; top:0; left:0; right:0; z-index:60; display:none;
+    background:rgba(232,180,60,.97); color:#5c4308; font-size:11px; font-weight:600;
+    text-align:center; padding:6px 8px; letter-spacing:1px;
+  }
+  .refresh-bar.show { display:block; animation:slideDown .25s ease; }
 
   /* ===== 头部 ===== */
   .header {
-    background:linear-gradient(160deg,#a83226 0%,#8c2a20 55%,#7a231a 100%);
-    color:#fff; padding:22px 16px 26px; text-align:center; position:relative;
-    overflow:hidden;
+    background:linear-gradient(155deg,#9c2b20 0%,#8c2a20 48%,#7a231a 100%);
+    color:#fff; padding:28px 20px 34px; text-align:center; position:relative; overflow:hidden;
   }
   .header::before {
     content:""; position:absolute; top:-60%; left:-20%; width:140%; height:140%;
-    background:radial-gradient(circle at 30% 20%, rgba(255,215,150,.18), transparent 55%);
+    background:radial-gradient(circle at 30% 20%, rgba(255,215,150,.20), transparent 55%);
     pointer-events:none;
   }
   .header::after {
     content:""; position:absolute; bottom:0; left:50%; transform:translateX(-50%);
-    width:44px; height:3px; border-radius:2px; background:linear-gradient(90deg,#e8c98a,#d4a95e);
+    width:52px; height:3px; border-radius:2px; background:linear-gradient(90deg,#e8c98a,#d4a95e);
   }
-  .header h1 { font-size:20px; font-weight:700; letter-spacing:4px; text-shadow:0 1px 2px rgba(0,0,0,.2); }
-  .header .sub { font-size:11px; opacity:.85; margin-top:6px; letter-spacing:1px; }
-  .updated { font-size:10px; opacity:.65; margin-top:8px; }
+  .header h1 { font-size:22px; font-weight:700; letter-spacing:6px; text-shadow:0 1px 3px rgba(0,0,0,.22); }
+  .header .sub { font-size:11px; opacity:.86; margin-top:7px; letter-spacing:1.5px; }
+  .updated { font-size:10px; opacity:.62; margin-top:8px; letter-spacing:.5px; }
+  .refresh-btn {
+    position:absolute; top:14px; right:14px; z-index:2;
+    width:38px; height:38px; border-radius:50%; border:none;
+    background:rgba(255,255,255,.18); color:#fff; font-size:16px; line-height:1;
+    cursor:pointer; display:flex; align-items:center; justify-content:center;
+    transition:background .2s, transform .2s;
+  }
+  .refresh-btn:active { transform:scale(.9); background:rgba(255,255,255,.32); }
+  .refresh-btn.spinning { animation:spin .9s linear infinite; }
 
   /* ===== 预订规则提示 ===== */
   .rule-bar {
-    margin:10px 12px; padding:12px 14px; border-radius:16px;
+    margin:12px; padding:14px 16px; border-radius:16px;
     background:linear-gradient(135deg,#fdf6ec,#fbf0dd); border:1px solid #ecd9b4;
     font-size:12px; line-height:1.9; color:#7a5c22;
     box-shadow:0 2px 12px rgba(60,40,20,.05);
   }
-  .rule-bar .t { font-weight:700; display:flex; align-items:center; gap:6px; margin-bottom:4px; font-size:13px; }
+  .rule-bar .t { font-weight:700; display:flex; align-items:center; gap:6px; margin-bottom:5px; font-size:13px; }
   .rule-bar .row { display:flex; align-items:baseline; gap:8px; }
   .rule-bar .row .time { min-width:46px; font-weight:700; color:#b8432f; }
   .rule-bar .row .desc { color:#8a6d3d; }
   .rule-bar b { color:#b8432f; }
-  .rule-bar .tip { color:#a08a5c; font-size:11px; margin-top:4px; padding-top:6px; border-top:1px dashed #ecd9b4; }
+  .rule-bar .tip { color:#a08a5c; font-size:11px; margin-top:5px; padding-top:7px; border-top:1px dashed #ecd9b4; }
 
   /* ===== 门店切换 ===== */
   .store-bar {
-    display:flex; gap:8px; overflow-x:auto; padding:12px;
-    background:#fff; border-bottom:1px solid #f0ece6; -webkit-overflow-scrolling:touch;
-    position:sticky; top:0; z-index:10; box-shadow:0 2px 8px rgba(0,0,0,.04);
+    display:flex; gap:8px; overflow-x:auto; padding:12px 12px 14px;
+    background:rgba(255,255,255,.94); -webkit-backdrop-filter:blur(8px); backdrop-filter:blur(8px);
+    border-bottom:1px solid var(--line); -webkit-overflow-scrolling:touch;
+    position:sticky; top:0; z-index:10; box-shadow:0 2px 12px rgba(0,0,0,.04);
   }
   .store-bar::-webkit-scrollbar { display:none; }
   .store-btn {
-    flex:0 0 auto; background:#f4f1ec; border:none; border-radius:18px;
-    padding:6px 15px; font-size:12px; color:#8a7d6d; cursor:pointer; white-space:nowrap;
-    transition:all .2s ease;
+    flex:0 0 auto; background:#f4f1ec; border:1px solid transparent; border-radius:999px;
+    padding:8px 16px; font-size:12px; color:var(--ink-soft); cursor:pointer; white-space:nowrap;
+    transition:all .18s ease; min-height:36px;
   }
-  .store-btn:active { transform:scale(.95); }
+  .store-btn:active { transform:scale(.96); }
   .store-btn.active {
     background:linear-gradient(135deg,#b8432f,#9c3523); color:#fff; font-weight:600;
-    box-shadow:0 2px 8px rgba(184,67,47,.35);
+    box-shadow:0 3px 10px rgba(184,67,47,.32);
   }
 
   /* ===== 变化提醒横幅 ===== */
   .banner {
-    display:none; margin:10px 12px; padding:12px 14px; border-radius:12px;
+    display:none; margin:12px 12px 0; padding:13px 15px; border-radius:14px;
     font-size:12px; line-height:1.7; background:#fff8e6;
-    border:1px solid #f0d9a8; color:#8a6d1d;
+    border:1px solid #f0d9a8; border-left:4px solid #e8b43c; color:#8a6d1d;
   }
   .banner.show { display:block; animation:slideDown .3s ease; }
   @keyframes slideDown { from { opacity:0; transform:translateY(-6px); } to { opacity:1; transform:none; } }
-  .banner .t { font-weight:700; margin-bottom:2px; display:flex; align-items:center; gap:5px; }
+  .banner .t { font-weight:700; margin-bottom:3px; display:flex; align-items:center; gap:5px; }
   .banner b.closed { color:#d32f2f; }
   .banner b.open { color:#2e7d32; }
 
   /* ===== 卡片 ===== */
   .card {
-    background:#fff; margin:10px 12px; border-radius:16px;
-    box-shadow:0 2px 12px rgba(60,40,20,.06); padding:16px;
+    background:var(--card); margin:12px; border-radius:18px;
+    box-shadow:var(--shadow); padding:18px; border:1px solid #f3efe9;
   }
   .card h2 {
-    font-size:14px; font-weight:700; margin-bottom:12px; display:flex; align-items:center; gap:8px;
+    font-size:15px; font-weight:700; margin-bottom:14px; display:flex; align-items:center; gap:8px;
     color:#3d3128;
   }
-  .card h2 .dot { width:8px; height:8px; border-radius:50%; display:inline-block; box-shadow:0 0 0 3px rgba(0,0,0,.05); flex:0 0 auto; }
-  .card h2 .store-name { margin-left:auto; font-size:11px; color:#b5aa9c; font-weight:400; white-space:nowrap; }
+  .card h2 .dot { width:9px; height:9px; border-radius:50%; display:inline-block; box-shadow:0 0 0 3px rgba(0,0,0,.05); flex:0 0 auto; }
+  .card h2 .store-name { margin-left:auto; font-size:11px; color:var(--faint); font-weight:400; white-space:nowrap; }
 
   /* ===== 图例 ===== */
-  .legend { display:flex; gap:12px; font-size:11px; color:#8d847a; margin-bottom:12px; flex-wrap:wrap; }
+  .legend { display:flex; gap:14px; font-size:11px; color:var(--muted); margin-bottom:14px; flex-wrap:wrap; }
   .legend span { display:inline-flex; align-items:center; gap:5px; }
-  .legend i { width:12px; height:12px; border-radius:4px; display:inline-block; }
+  .legend i { width:13px; height:13px; border-radius:5px; display:inline-block; }
   .legend .i-closed { background:#e5645c; }
   .legend .i-half { background:linear-gradient(to bottom,#e5645c 50%,#f4f1ec 50%); border:1px solid #e8e2d8; }
   .legend .i-full { background:#e8a13c; }
@@ -98,35 +148,35 @@
   .legend .i-normal { background:#f4f1ec; border:1px solid #e8e2d8; }
 
   /* ===== 日历 ===== */
-  .cal-nav { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
+  .cal-nav { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
   .cal-nav button {
-    background:#f4f1ec; border:none; border-radius:10px; padding:5px 14px;
-    font-size:13px; color:#6b5d4e; cursor:pointer; transition:all .2s;
+    background:#f4f1ec; border:none; border-radius:12px; padding:7px 16px;
+    font-size:13px; color:var(--ink-soft); cursor:pointer; transition:all .18s; min-height:36px;
   }
   .cal-nav button:active { transform:scale(.94); background:#eae4da; }
-  .cal-nav .ym { font-size:16px; font-weight:700; color:#3d3128; letter-spacing:1px; }
-  .cal-head, .cal-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:4px; }
-  .cal-head { font-size:10px; color:#b5aa9c; text-align:center; margin-bottom:4px; }
-  .cal-grid { row-gap:4px; }
+  .cal-nav .ym { font-size:17px; font-weight:700; color:#3d3128; letter-spacing:1px; }
+  .cal-head, .cal-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:5px; }
+  .cal-head { font-size:10px; color:var(--faint); text-align:center; margin-bottom:6px; }
+  .cal-grid { row-gap:5px; }
   .day {
-    aspect-ratio:1/1; border-radius:10px; display:flex; flex-direction:column;
+    aspect-ratio:1/1; border-radius:12px; display:flex; flex-direction:column;
     align-items:center; justify-content:center; font-size:13px; position:relative;
-    background:#faf8f5; transition:transform .1s;
+    background:#faf8f5; border:1px solid #f0ebe3; transition:transform .12s ease;
   }
-  .day .d { font-size:13px; font-weight:600; position:relative; z-index:1; }
-  .day .tag { font-size:8px; margin-top:1px; position:relative; z-index:1; letter-spacing:0; }
-  .day.closed { background:linear-gradient(160deg,#e5645c,#d9524a); color:#fff; box-shadow:0 2px 6px rgba(229,100,92,.35); }
-  .day.full { background:linear-gradient(160deg,#e8a13c,#de9430); color:#fff; box-shadow:0 2px 6px rgba(232,161,60,.35); }
-  .day.open { background:linear-gradient(160deg,#4caf7d,#3e9c6e); color:#fff; box-shadow:0 2px 6px rgba(76,175,125,.3); }
-  .day.closed .tag, .day.full .tag, .day.open .tag { color:rgba(255,255,255,.92); }
+  .day .d { font-size:14px; font-weight:600; position:relative; z-index:1; }
+  .day .tag { font-size:8px; margin-top:1px; position:relative; z-index:1; letter-spacing:0; white-space:nowrap; }
+  .day.closed { background:linear-gradient(160deg,#e5645c,#d9524a); color:#fff; border-color:transparent; box-shadow:0 3px 8px rgba(229,100,92,.32); }
+  .day.full { background:linear-gradient(160deg,#e8a13c,#de9430); color:#fff; border-color:transparent; box-shadow:0 3px 8px rgba(232,161,60,.32); }
+  .day.open { background:linear-gradient(160deg,#4caf7d,#3e9c6e); color:#fff; border-color:transparent; box-shadow:0 3px 8px rgba(76,175,125,.28); }
+  .day.closed .tag, .day.full .tag, .day.open .tag { color:rgba(255,255,255,.94); }
   .day.other-month { visibility:hidden; }
-  .day.today { outline:2px solid #a83226; outline-offset:1px; }
+  .day.today { outline:2px solid var(--red); outline-offset:1px; }
 
   /* 半红：上半=午宴不可约，下半=晚宴不可约 */
   .day.half { background:#faf8f5; color:#3d3128; }
   .day.half .half-bar { position:absolute; left:0; right:0; height:50%; z-index:0; }
-  .day.half .half-bar.top { top:0; background:#e5645c; }
-  .day.half .half-bar.bottom { bottom:0; background:#e5645c; }
+  .day.half .half-bar.top { top:0; background:#e5645c; border-radius:11px 11px 0 0; }
+  .day.half .half-bar.bottom { bottom:0; background:#e5645c; border-radius:0 0 11px 11px; }
   .day.half .tag { color:#c94a42; font-weight:700; }
 
   /* 变化高亮 */
@@ -141,51 +191,58 @@
     box-shadow:0 1px 3px rgba(0,0,0,.2);
   }
 
-  .cal-hint { font-size:10px; color:#b5aa9c; margin-top:8px; text-align:center; letter-spacing:.5px; }
+  .cal-hint { font-size:10px; color:var(--faint); margin-top:10px; text-align:center; letter-spacing:.5px; }
 
   /* ===== 不可约日期（横向排列标签） ===== */
-  .city-group { margin-bottom:16px; }
+  .city-group { margin-bottom:18px; }
   .city-group:last-child { margin-bottom:0; }
   .city-title {
-    font-size:13px; font-weight:700; color:#a83226; letter-spacing:2px;
+    font-size:13px; font-weight:700; color:var(--red); letter-spacing:2px;
     padding:6px 0 10px; display:flex; align-items:center; gap:8px;
   }
   .city-title::before { content:""; width:4px; height:14px; border-radius:2px; background:linear-gradient(180deg,#b8432f,#9c3523); }
   .city-title .count {
-    margin-left:auto; font-size:10px; font-weight:400; color:#c4baac; letter-spacing:0;
-    background:#f7f4ef; padding:2px 8px; border-radius:10px;
+    margin-left:auto; font-size:10px; font-weight:400; color:var(--faint); letter-spacing:0;
+    background:#f7f4ef; padding:2px 9px; border-radius:10px;
   }
   .store-sub {
-    font-size:11px; color:#8d847a; font-weight:600; margin:10px 0 6px 4px;
+    font-size:11px; color:var(--muted); font-weight:600; margin:11px 0 7px 4px;
     display:flex; align-items:center; gap:6px;
   }
-  .store-sub::before { content:""; width:4px; height:4px; border-radius:50%; background:#c4baac; }
-  .store-sub .s-count { margin-left:auto; font-size:10px; color:#c4baac; font-weight:400; }
-  .chips-wrap { display:flex; flex-wrap:wrap; gap:6px; padding-left:4px; }
+  .store-sub::before { content:""; width:4px; height:4px; border-radius:50%; background:var(--faint); }
+  .store-sub .s-count { margin-left:auto; font-size:10px; color:var(--faint); font-weight:400; }
+  .chips-wrap { display:flex; flex-wrap:wrap; gap:8px; padding-left:2px; }
   .closed-day {
     display:inline-flex; align-items:center;
-    padding:6px 11px; background:#fdf7f5; border:1px solid #f3ddd8;
-    border-radius:12px; transition:all .15s;
+    padding:8px 12px; background:#fdf7f5; border:1px solid #f3ddd8;
+    border-radius:14px; transition:all .15s; box-shadow:0 1px 2px rgba(60,40,20,.03);
   }
-  .closed-day:active { transform:scale(.95); }
+  .closed-day:active { transform:scale(.96); }
   .closed-day .cd-date { font-weight:700; color:#3d3128; font-size:12px; white-space:nowrap; }
-  .closed-day .cd-date .w { font-size:10px; color:#b5aa9c; font-weight:400; margin-left:4px; }
-  .closed-day .cd-meals { display:flex; gap:4px; margin-left:6px; }
+  .closed-day .cd-date .w { font-size:10px; color:var(--faint); font-weight:400; margin-left:4px; }
+  .closed-day .cd-meals { display:flex; gap:4px; margin-left:7px; }
   .closed-day .m {
-    display:inline-block; padding:2px 9px; border-radius:10px; font-size:10px;
+    display:inline-block; padding:3px 10px; border-radius:10px; font-size:10px;
     color:#fff; font-weight:600; letter-spacing:1px;
   }
   .closed-day .m.lunch { background:linear-gradient(135deg,#4a8fd4,#3b7cc0); }
   .closed-day .m.dinner { background:linear-gradient(135deg,#8e6bb8,#7b57a8); }
   .closed-day .m.none { background:#e57373; }
-  .none { font-size:12px; color:#b5aa9c; padding:10px 0; text-align:center; }
+  .none { font-size:12px; color:var(--faint); padding:12px 0; text-align:center; }
 
-  .footer { text-align:center; font-size:10px; color:#c4baac; padding:16px 0 26px; letter-spacing:1px; }
+  .footer { text-align:center; font-size:10px; color:var(--faint); padding:18px 0 28px; letter-spacing:1px; }
 </style>
 </head>
 <body>
 
+<div class="refresh-bar" id="refreshBar">🔄 正在更新档期…</div>
+<div class="loading-mask" id="loadingMask">
+  <div class="spinner"></div>
+  <div>正在获取最新档期…</div>
+</div>
+
 <div class="header">
+  <button class="refresh-btn" id="refreshBtn" onclick="refreshCurrent()" aria-label="刷新档期">🔄</button>
   <h1>🏮 档期查询</h1>
   <div class="sub">红色为不可预约 · 请合理安排时间</div>
   <div class="updated" id="updatedAt"></div>
@@ -242,6 +299,7 @@
 var DATA_URL = "schedule.json";
 var LS_KEY = "schedule_snapshot_v1";
 var LS_STORE = "schedule_store_v1";
+var LS_CACHE = "schedule_cache_v1";
 
 var state = {
   data: null,        // 最新档期数据
@@ -559,6 +617,51 @@ function renderAllStores() {
   });
 }
 
+// ============ 加载 / 刷新状态 ============
+function showLoading() { document.getElementById("loadingMask").classList.remove("hide"); }
+function hideLoading() { document.getElementById("loadingMask").classList.add("hide"); }
+function showRefresh() {
+  document.getElementById("refreshBar").classList.add("show");
+  var b = document.getElementById("refreshBtn");
+  if (b) b.classList.add("spinning");
+}
+function hideRefresh() {
+  document.getElementById("refreshBar").classList.remove("show");
+  var b = document.getElementById("refreshBtn");
+  if (b) b.classList.remove("spinning");
+}
+
+function readSavedIndex() {
+  try {
+    var idx = parseInt(localStorage.getItem(LS_STORE), 10);
+    return isNaN(idx) ? null : idx;
+  } catch (e) { return null; }
+}
+
+// 先用上次缓存立即渲染，再后台刷新，避免打开页面白屏
+function renderFromCache() {
+  try {
+    var cached = JSON.parse(localStorage.getItem(LS_CACHE));
+    if (cached && cached.stores && cached.stores.length) {
+      state.data = cached;
+      var savedIdx = readSavedIndex();
+      if (savedIdx === ALL_STORES) state.storeIndex = ALL_STORES;
+      else if (savedIdx !== null && cached.stores[savedIdx]) state.storeIndex = savedIdx;
+      renderStoreBar();
+      renderAll();
+      document.getElementById("updatedAt").textContent = "更新于 " + (cached.updated_at || "—") + "（缓存）";
+      return true;
+    }
+  } catch (e) {}
+  return false;
+}
+
+function refreshCurrent() {
+  if (state.storeIndex === ALL_STORES) { refreshAllStores(); return; }
+  var s = curStore();
+  if (s) refreshStoreData(s.store_id);
+}
+
 // ============ 页面初始化 ============
 function renderAll() {
   var calCard = document.getElementById("calCard");
@@ -579,19 +682,20 @@ function renderAll() {
 
 function applyData() {
   var d = state.data;
+  var isSummary = state.storeIndex === ALL_STORES;
+  var s = isSummary ? null : curStore();
   document.getElementById("updatedAt").textContent = "更新于 " + (d.updated_at || "—");
 
   // 变化：服务端 changes（按门店）+ 用户上次所见对比
   var allChanged = {};   // store_id -> {date: status}
-  var s = curStore();
   var changed = {};
   (d.changes || []).forEach(function (c) {
     if (!allChanged[c.store_id]) allChanged[c.store_id] = {};
     allChanged[c.store_id][c.date] = c.status;
-    if (c.store_id === s.store_id) changed[c.date] = c.status;
+    if (!isSummary && s && c.store_id === s.store_id) changed[c.date] = c.status;
   });
   var lsStore = state.lastSeen && state.lastSeen.stores ? state.lastSeen.stores[state.storeIndex] : null;
-  var ls = diffStore(lsStore, s);
+  var ls = isSummary ? {} : diffStore(lsStore, s);
   Object.keys(ls).forEach(function (k) { if (!changed[k]) changed[k] = ls[k]; });
   state.changedDates = changed;
 
@@ -651,6 +755,7 @@ function saveSnapshot() {
       }),
       updated_at: state.data.updated_at
     }));
+    localStorage.setItem(LS_CACHE, JSON.stringify(state.data));
   } catch (e) { /* 忽略 */ }
 }
 
@@ -658,12 +763,12 @@ function loadData() {
   var now = new Date();
   state.year = now.getFullYear();
   state.month = now.getMonth();
-  var savedIdx = null;
-  try {
-    var saved = localStorage.getItem(LS_STORE);
-    var idx = parseInt(saved, 10);
-    if (!isNaN(idx)) savedIdx = idx;
-  } catch (e) {}
+  var savedIdx = readSavedIndex();
+
+  // 先用缓存立即渲染（避免白屏），再后台拉取最新实时数据
+  var hasCache = renderFromCache();
+  if (hasCache) { hideLoading(); showRefresh(); }
+  else { showLoading(); }
 
   // 优先实时拉取最新数据
   apiGet(CITY_LIST_URL, {}).then(function (cityResp) {
@@ -707,6 +812,8 @@ function loadData() {
       try {
         state.lastSeen = JSON.parse(localStorage.getItem(LS_KEY));
       } catch (e) { state.lastSeen = null; }
+      hideLoading();
+      hideRefresh();
       applyData();
     });
   }).catch(function () {
@@ -721,8 +828,12 @@ function loadData() {
       try {
         state.lastSeen = JSON.parse(localStorage.getItem(LS_KEY));
       } catch (e) { state.lastSeen = null; }
+      hideLoading();
+      hideRefresh();
       applyData();
     }).catch(function (err) {
+      hideLoading();
+      hideRefresh();
       document.getElementById("banner").innerHTML = "<div class='t'>⚠️ 数据加载失败</div><div>请检查网络后刷新页面（" + err.message + "）</div>";
       document.getElementById("banner").className = "banner show";
     });
@@ -731,9 +842,10 @@ function loadData() {
 
 // 每次点进门店时刷新该店实时数据
 function refreshStoreData(storeId) {
+  showRefresh();
   var store = { id: storeId, name: "" };
   state.data.stores.forEach(function (s) { if (s.store_id === storeId) { store.name = s.store_name; } });
-  fetchStoreRealTime(store).then(function (fresh) {
+  return fetchStoreRealTime(store).then(function (fresh) {
     if (!fresh) return;
     for (var i = 0; i < state.data.stores.length; i++) {
       if (state.data.stores[i].store_id === storeId) {
@@ -745,11 +857,13 @@ function refreshStoreData(storeId) {
         return;
       }
     }
-  }).catch(function () { /* 静默失败，保留旧数据 */ });
+  }).catch(function () { /* 静默失败，保留旧数据 */ })
+    .then(function () { hideRefresh(); });
 }
 
 // 刷新全部门店实时数据（汇总视图用）
 function refreshAllStores() {
+  showRefresh();
   var tasks = state.data.stores.map(function (s, i) {
     return new Promise(function (resolve) {
       setTimeout(function () {
@@ -760,12 +874,13 @@ function refreshAllStores() {
       }, i * REQUEST_GAP);
     });
   });
-  Promise.all(tasks).then(function () {
+  return Promise.all(tasks).then(function () {
     state.changedDates = {};
     renderStoreBar();
     renderAll();
     saveSnapshot();
-  });
+  }).catch(function () {})
+    .then(function () { hideRefresh(); });
 }
 
 function prevMonth() {
