@@ -192,9 +192,9 @@
 <!-- 预订规则说明 -->
 <div class="rule-bar">
   <div class="t">📌 预订规则</div>
-  <div>午宴：当天 <b>11:00</b> 后停止预订（开场前无法预定）</div>
-  <div>晚宴：当天 <b>17:30</b> 后停止预订（开场前无法预定）</div>
-  <div style="color:#9a7d45;font-size:11px;margin-top:2px">请提前安排预订，避免当天无法预约</div>
+  <div>午宴：当天 <b>11:50</b> 开场前停止预订</div>
+  <div>晚宴：当天 <b>18:50</b> 开场前停止预订</div>
+  <div style="color:#9a7d45;font-size:11px;margin-top:2px">开场前未预定的当天场次无法预约，请提前安排</div>
 </div>
 
 <!-- 不可预约日期（置顶） -->
@@ -221,7 +221,7 @@
     <span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span>
   </div>
   <div class="cal-grid" id="calGrid"></div>
-  <div class="cal-hint">半红：上半=午宴不可约，下半=晚宴不可约 · 当天11:00后午宴不显示，17:30后晚宴不显示</div>
+  <div class="cal-hint">半红：上半=午宴不可约，下半=晚宴不可约 · 当天11:50后午宴不显示，18:50后晚宴不显示</div>
 </div>
 
 <div class="footer">数据由门店后台自动同步 · 打开页面自动检查更新</div>
@@ -249,9 +249,9 @@ function parseISO(s) {
   return new Date(+p[0], +p[1] - 1, +p[2]);
 }
 
-// 当天截止时间：11:00 后午宴不可订，17:30 后晚宴不可订
-var LUNCH_DEADLINE = 11 * 60;      // 11:00
-var DINNER_DEADLINE = 17 * 60 + 30; // 17:30
+// 当天截止时间（开场时间为界）：午宴 11:50 后不可订，晚宴 18:50 后不可订
+var LUNCH_DEADLINE = 11 * 60 + 50;    // 11:50
+var DINNER_DEADLINE = 18 * 60 + 50;   // 18:50
 
 function mealExpired(ds, meal) {
   // ds: 'YYYY-MM-DD'，meal: 'lunch' | 'dinner'
@@ -261,6 +261,85 @@ function mealExpired(ds, meal) {
   if (meal === "lunch") return minutes >= LUNCH_DEADLINE;
   if (meal === "dinner") return minutes >= DINNER_DEADLINE;
   return false;
+}
+
+// ============ 实时数据接口（只读 GET，接口支持 CORS） ============
+var API_BASE = "https://xy.duoxijoy.cn/api/xuyan";
+var CITY_LIST_URL = "https://xy.duoxijoy.cn/api/xuyan/get_city_list";
+var DATES_URL = API_BASE + "/schedule/dates";
+var PAGE_LIST_URL = API_BASE + "/schedule/pagination_list";
+var REQUEST_GAP = 200; // 请求间隔毫秒
+
+function apiGet(url, params) {
+  var qs = "";
+  if (params) {
+    var parts = [];
+    for (var k in params) parts.push(encodeURIComponent(k) + "=" + encodeURIComponent(params[k]));
+    qs = "?" + parts.join("&");
+  }
+  return fetch(url + qs, { cache: "no-store" }).then(function (r) {
+    if (!r.ok) throw new Error("HTTP " + r.status);
+    return r.json();
+  });
+}
+
+// 实时拉取某门店档期状态（与 fetch_schedule.py 相同的判定逻辑）
+function fetchStoreRealTime(store) {
+  return apiGet(DATES_URL, { store_id: store.id }).then(function (d) {
+    var dates = (d.data || []).map(function (x) { return String(x).slice(0, 10); }).sort();
+    var todayStr = fmtDate(new Date());
+    var dayMap = {};  // date -> {lunch: state, dinner: state}  state: open/full/closed
+    var rangeEnd = dates.length ? dates[dates.length - 1] : todayStr;
+    var rangeStart = dates.length && dates[0] < todayStr ? dates[0] : todayStr;
+    var cursor = parseISO(rangeStart);
+    var endD = parseISO(rangeEnd);
+    var tasks = [];
+    while (cursor <= endD) {
+      (function (dayStr) {
+        if (dates.indexOf(dayStr) === -1) {
+          // 店休/未开放
+          dayMap[dayStr] = { lunch: "closed", dinner: "closed" };
+          return;
+        }
+        tasks.push(apiGet(PAGE_LIST_URL, { store_id: store.id, schedule_day: dayStr + " 00:00:00", page: 1, limit: 50 }).then(function (r2) {
+          var items = (r2.data && r2.data.list) || [];
+          var lunch = items.filter(function (it) { return it.banquetType === 1; });
+          var dinner = items.filter(function (it) { return it.banquetType === 2; });
+          function partState(list) {
+            if (!list.length) return "closed";
+            var open = list.filter(function (it) { return it.scheduleState === 1 && (it.seatLeftCount || 0) > 0; });
+            return open.length ? "open" : "full";
+          }
+          dayMap[dayStr] = { lunch: partState(lunch), dinner: partState(dinner) };
+        }));
+      })(fmtDate(cursor));
+      cursor.setDate(cursor.getDate() + 1);
+    }
+    return Promise.all(tasks).then(function () {
+      // 组装与 schedule.json 相同结构
+      var lunchClosed = [], dinnerClosed = [], open = [], full = [], closed = [];
+      Object.keys(dayMap).forEach(function (ds) {
+        var st = dayMap[ds];
+        if (st.lunch !== "open") lunchClosed.push(ds);
+        if (st.dinner !== "open") dinnerClosed.push(ds);
+        if (st.lunch === "open" || st.dinner === "open") open.push(ds);
+        else if (st.lunch === "full" || st.dinner === "full") full.push(ds);
+        else closed.push(ds);
+      });
+      return {
+        store_id: store.id,
+        store_name: store.name,
+        open_dates: open.sort(),
+        full_dates: full.sort(),
+        closed_dates: closed.sort(),
+        lunch_closed_dates: lunchClosed.sort(),
+        dinner_closed_dates: dinnerClosed.sort(),
+        range_start: rangeStart,
+        range_end: rangeEnd,
+        realtime: true
+      };
+    });
+  });
 }
 
 // ============ 门店 ============
@@ -282,6 +361,8 @@ function renderStoreBar() {
     try { localStorage.setItem(LS_STORE, ALL_STORES); } catch (e) {}
     renderStoreBar();
     renderAll();
+    // 每次进入汇总：刷新全部门店实时数据
+    refreshAllStores();
   };
   bar.appendChild(allBtn);
   // 各门店按钮
@@ -294,6 +375,8 @@ function renderStoreBar() {
       try { localStorage.setItem(LS_STORE, i); } catch (e) {}
       renderStoreBar();
       renderAll();
+      // 每次点进该门店：实时刷新最新数据
+      refreshStoreData(s.store_id);
     };
     bar.appendChild(btn);
   });
@@ -551,28 +634,107 @@ function saveSnapshot() {
 }
 
 function loadData() {
-  fetch(DATA_URL, { cache: "no-store" })
-    .then(function (r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
-    .then(function (json) {
-      state.data = json;
-      var now = new Date();
-      state.year = now.getFullYear();
-      state.month = now.getMonth();
-      try {
-        var saved = localStorage.getItem(LS_STORE);
-        var idx = parseInt(saved, 10);
-        if (idx === ALL_STORES) state.storeIndex = ALL_STORES;
-        else if (!isNaN(idx) && json.stores[idx]) state.storeIndex = idx;
-      } catch (e) {}
+  var now = new Date();
+  state.year = now.getFullYear();
+  state.month = now.getMonth();
+  var savedIdx = null;
+  try {
+    var saved = localStorage.getItem(LS_STORE);
+    var idx = parseInt(saved, 10);
+    if (!isNaN(idx)) savedIdx = idx;
+  } catch (e) {}
+
+  // 优先实时拉取最新数据
+  apiGet(CITY_LIST_URL, {}).then(function (cityResp) {
+    var stores = [];
+    (cityResp.data || []).forEach(function (city) {
+      (city.storeHallList || []).forEach(function (s) {
+        if (s.id && (s.storeName || "").indexOf("下午茶") === -1) {
+          stores.push({ id: s.id, name: s.storeName });
+        }
+      });
+    });
+    if (!stores.length) throw new Error("门店列表为空");
+    // 逐个门店实时拉取档期
+    var tasks = stores.map(function (st, i) {
+      return new Promise(function (resolve) {
+        setTimeout(function () {
+          fetchStoreRealTime(st).then(function (data) { resolve(data); }).catch(function () { resolve(null); });
+        }, i * REQUEST_GAP);
+      });
+    });
+    return Promise.all(tasks).then(function (results) {
+      var realStores = results.filter(Boolean);
+      if (!realStores.length) throw new Error("实时数据获取失败");
+      state.data = {
+        updated_at: fmtDate(new Date()) + " " + pad(new Date().getHours()) + ":" + pad(new Date().getMinutes()) + "（实时）",
+        stores: realStores,
+        changes: []
+      };
+      if (savedIdx === ALL_STORES) state.storeIndex = ALL_STORES;
+      else if (savedIdx !== null && realStores[savedIdx]) state.storeIndex = savedIdx;
       try {
         state.lastSeen = JSON.parse(localStorage.getItem(LS_KEY));
       } catch (e) { state.lastSeen = null; }
       applyData();
-    })
-    .catch(function (err) {
+    });
+  }).catch(function () {
+    // 实时失败：回退静态 schedule.json
+    return fetch(DATA_URL, { cache: "no-store" }).then(function (r) {
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      return r.json();
+    }).then(function (json) {
+      state.data = json;
+      if (savedIdx === ALL_STORES) state.storeIndex = ALL_STORES;
+      else if (savedIdx !== null && json.stores[savedIdx]) state.storeIndex = savedIdx;
+      try {
+        state.lastSeen = JSON.parse(localStorage.getItem(LS_KEY));
+      } catch (e) { state.lastSeen = null; }
+      applyData();
+    }).catch(function (err) {
       document.getElementById("banner").innerHTML = "<div class='t'>⚠️ 数据加载失败</div><div>请检查网络后刷新页面（" + err.message + "）</div>";
       document.getElementById("banner").className = "banner show";
     });
+  });
+}
+
+// 每次点进门店时刷新该店实时数据
+function refreshStoreData(storeId) {
+  var store = { id: storeId, name: "" };
+  state.data.stores.forEach(function (s) { if (s.store_id === storeId) { store.name = s.store_name; } });
+  fetchStoreRealTime(store).then(function (fresh) {
+    if (!fresh) return;
+    for (var i = 0; i < state.data.stores.length; i++) {
+      if (state.data.stores[i].store_id === storeId) {
+        state.data.stores[i] = fresh;
+        state.changedDates = {};
+        renderStoreBar();
+        renderAll();
+        saveSnapshot();
+        return;
+      }
+    }
+  }).catch(function () { /* 静默失败，保留旧数据 */ });
+}
+
+// 刷新全部门店实时数据（汇总视图用）
+function refreshAllStores() {
+  var tasks = state.data.stores.map(function (s, i) {
+    return new Promise(function (resolve) {
+      setTimeout(function () {
+        fetchStoreRealTime({ id: s.store_id, name: s.store_name }).then(function (fresh) {
+          if (fresh) state.data.stores[i] = fresh;
+          resolve();
+        }).catch(function () { resolve(); });
+      }, i * REQUEST_GAP);
+    });
+  });
+  Promise.all(tasks).then(function () {
+    state.changedDates = {};
+    renderStoreBar();
+    renderAll();
+    saveSnapshot();
+  });
 }
 
 function prevMonth() {
