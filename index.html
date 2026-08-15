@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>档期查询</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  body {
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
+    background:#f7f5f2; color:#2d3436; font-size:13px;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  /* ===== 头部 ===== */
+  .header {
+    background:linear-gradient(160deg,#a83226 0%,#8c2a20 55%,#7a231a 100%);
+    color:#fff; padding:22px 16px 26px; text-align:center; position:relative;
+    overflow:hidden;
+  }
+  .header::before {
+    content:""; position:absolute; top:-60%; left:-20%; width:140%; height:140%;
+    background:radial-gradient(circle at 30% 20%, rgba(255,215,150,.18), transparent 55%);
+    pointer-events:none;
+  }
+  .header::after {
+    content:""; position:absolute; bottom:0; left:50%; transform:translateX(-50%);
+    width:44px; height:3px; border-radius:2px; background:linear-gradient(90deg,#e8c98a,#d4a95e);
+  }
+  .header h1 { font-size:20px; font-weight:700; letter-spacing:4px; text-shadow:0 1px 2px rgba(0,0,0,.2); }
+  .header .sub { font-size:11px; opacity:.85; margin-top:6px; letter-spacing:1px; }
+  .updated { font-size:10px; opacity:.65; margin-top:8px; }
+
+  /* ===== 门店切换 ===== */
+  .store-bar {
+    display:flex; gap:8px; overflow-x:auto; padding:12px 14px; background:#fff;
+    border-bottom:1px solid #f0ece6; -webkit-overflow-scrolling:touch;
+    position:sticky; top:0; z-index:10; box-shadow:0 2px 8px rgba(0,0,0,.04);
+  }
+  .store-bar::-webkit-scrollbar { display:none; }
+  .store-btn {
+    flex:0 0 auto; background:#f4f1ec; border:none; border-radius:18px;
+    padding:6px 15px; font-size:12px; color:#8a7d6d; cursor:pointer; white-space:nowrap;
+    transition:all .2s ease;
+  }
+  .store-btn:active { transform:scale(.95); }
+  .store-btn.active {
+    background:linear-gradient(135deg,#b8432f,#9c3523); color:#fff; font-weight:600;
+    box-shadow:0 2px 8px rgba(184,67,47,.35);
+  }
+
+  /* ===== 变化提醒横幅 ===== */
+  .banner {
+    display:none; margin:10px 12px; padding:12px 14px; border-radius:12px;
+    font-size:12px; line-height:1.7; background:#fff8e6;
+    border:1px solid #f0d9a8; color:#8a6d1d;
+  }
+  .banner.show { display:block; animation:slideDown .3s ease; }
+  @keyframes slideDown { from { opacity:0; transform:translateY(-6px); } to { opacity:1; transform:none; } }
+  .banner .t { font-weight:700; margin-bottom:2px; display:flex; align-items:center; gap:5px; }
+  .banner b.closed { color:#d32f2f; }
+  .banner b.open { color:#2e7d32; }
+
+  /* ===== 卡片 ===== */
+  .card {
+    background:#fff; margin:10px 12px; border-radius:16px;
+    box-shadow:0 2px 12px rgba(60,40,20,.06); padding:16px;
+  }
+  .card h2 {
+    font-size:14px; font-weight:700; margin-bottom:12px; display:flex; align-items:center; gap:7px;
+    color:#3d3128;
+  }
+  .card h2 .dot { width:7px; height:7px; border-radius:50%; display:inline-block; box-shadow:0 0 0 3px rgba(0,0,0,.05); }
+
+  /* ===== 图例 ===== */
+  .legend { display:flex; gap:12px; font-size:11px; color:#8d847a; margin-bottom:12px; flex-wrap:wrap; }
+  .legend span { display:inline-flex; align-items:center; gap:5px; }
+  .legend i { width:12px; height:12px; border-radius:4px; display:inline-block; }
+  .legend .i-closed { background:#e5645c; }
+  .legend .i-half { background:linear-gradient(to bottom,#e5645c 50%,#f4f1ec 50%); border:1px solid #e8e2d8; }
+  .legend .i-full { background:#e8a13c; }
+  .legend .i-open { background:#4caf7d; }
+  .legend .i-normal { background:#f4f1ec; border:1px solid #e8e2d8; }
+
+  /* ===== 日历 ===== */
+  .cal-nav { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
+  .cal-nav button {
+    background:#f4f1ec; border:none; border-radius:10px; padding:5px 14px;
+    font-size:13px; color:#6b5d4e; cursor:pointer; transition:all .2s;
+  }
+  .cal-nav button:active { transform:scale(.94); background:#eae4da; }
+  .cal-nav .ym { font-size:16px; font-weight:700; color:#3d3128; letter-spacing:1px; }
+  .cal-head, .cal-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:4px; }
+  .cal-head { font-size:10px; color:#b5aa9c; text-align:center; margin-bottom:4px; }
+  .cal-grid { row-gap:4px; }
+  .day {
+    aspect-ratio:1/1; border-radius:10px; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; font-size:13px; position:relative;
+    background:#faf8f5; transition:transform .1s;
+  }
+  .day .d { font-size:13px; font-weight:600; position:relative; z-index:1; }
+  .day .tag { font-size:8px; margin-top:1px; position:relative; z-index:1; letter-spacing:0; }
+  .day.closed { background:linear-gradient(160deg,#e5645c,#d9524a); color:#fff; box-shadow:0 2px 6px rgba(229,100,92,.35); }
+  .day.full { background:linear-gradient(160deg,#e8a13c,#de9430); color:#fff; box-shadow:0 2px 6px rgba(232,161,60,.35); }
+  .day.open { background:linear-gradient(160deg,#4caf7d,#3e9c6e); color:#fff; box-shadow:0 2px 6px rgba(76,175,125,.3); }
+  .day.closed .tag, .day.full .tag, .day.open .tag { color:rgba(255,255,255,.92); }
+  .day.other-month { visibility:hidden; }
+  .day.today { outline:2px solid #a83226; outline-offset:1px; }
+
+  /* 半红：上半=午宴不可约，下半=晚宴不可约 */
+  .day.half { background:#faf8f5; color:#3d3128; }
+  .day.half .half-bar { position:absolute; left:0; right:0; height:50%; z-index:0; }
+  .day.half .half-bar.top { top:0; background:#e5645c; }
+  .day.half .half-bar.bottom { bottom:0; background:#e5645c; }
+  .day.half .tag { color:#c94a42; font-weight:700; }
+
+  /* 变化高亮 */
+  .day.changed { animation:flash 1.2s ease-in-out 3; }
+  @keyframes flash {
+    0%,100% { box-shadow:0 0 0 0 rgba(232,180,60,.9); }
+    50% { box-shadow:0 0 0 5px rgba(232,180,60,.4); }
+  }
+  .day.changed::after {
+    content:"NEW"; position:absolute; top:-5px; right:-5px; background:#e8b43c; color:#5c4308;
+    font-size:7px; font-weight:800; padding:1px 4px; border-radius:6px; z-index:2;
+    box-shadow:0 1px 3px rgba(0,0,0,.2);
+  }
+
+  .cal-hint { font-size:10px; color:#b5aa9c; margin-top:8px; text-align:center; letter-spacing:.5px; }
+
+  /* ===== 不可约日期（横向排列标签） ===== */
+  .city-group { margin-bottom:14px; }
+  .city-group:last-child { margin-bottom:0; }
+  .city-title {
+    font-size:12px; font-weight:700; color:#a83226; letter-spacing:2px;
+    padding:4px 0 8px; display:flex; align-items:center; gap:6px;
+  }
+  .city-title::before { content:""; width:4px; height:12px; border-radius:2px; background:linear-gradient(180deg,#b8432f,#9c3523); }
+  .store-sub {
+    font-size:11px; color:#8d847a; font-weight:600; margin:8px 0 5px 2px;
+    display:flex; align-items:center; gap:5px;
+  }
+  .store-sub::before { content:""; width:3px; height:3px; border-radius:50%; background:#c4baac; }
+  .chips-wrap { display:flex; flex-wrap:wrap; gap:6px; }
+  .closed-day {
+    display:inline-flex; align-items:center;
+    padding:6px 10px; background:#fdf7f5; border:1px solid #f3ddd8;
+    border-radius:12px; transition:all .15s;
+  }
+  .closed-day:active { transform:scale(.95); }
+  .closed-day .cd-date { font-weight:700; color:#3d3128; font-size:12px; white-space:nowrap; }
+  .closed-day .cd-date .w { font-size:10px; color:#b5aa9c; font-weight:400; margin-left:4px; }
+  .closed-day .cd-meals { display:flex; gap:4px; margin-left:6px; }
+  .closed-day .m {
+    display:inline-block; padding:2px 9px; border-radius:10px; font-size:10px;
+    color:#fff; font-weight:600; letter-spacing:1px;
+  }
+  .closed-day .m.lunch { background:linear-gradient(135deg,#4a8fd4,#3b7cc0); }
+  .closed-day .m.dinner { background:linear-gradient(135deg,#8e6bb8,#7b57a8); }
+  .closed-day .m.none { background:#e57373; }
+  .none { font-size:12px; color:#b5aa9c; padding:8px 0; text-align:center; }
+
+  .footer { text-align:center; font-size:10px; color:#c4baac; padding:16px 0 26px; letter-spacing:1px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>🏮 档期查询</h1>
+  <div class="sub">红色为不可预约 · 请合理安排时间</div>
+  <div class="updated" id="updatedAt"></div>
+</div>
+
+<!-- 门店切换 -->
+<div class="store-bar" id="storeBar"></div>
+
+<!-- 更新提醒横幅 -->
+<div class="banner" id="banner">
+  <div class="t">⚠️ 档期有更新</div>
+  <div id="bannerText"></div>
+</div>
+
+<!-- 不可预约日期（置顶） -->
+<div class="card">
+  <h2><span class="dot" style="background:#e5645c"></span><span id="listCardTitle">近期不可预约日期</span></h2>
+  <div id="closedDays"></div>
+</div>
+
+<!-- 日历 -->
+<div class="card" id="calCard">
+  <h2><span class="dot" style="background:#4caf7d"></span>预约日历 <span id="curStore" style="font-size:11px;color:#b5aa9c;font-weight:400;margin-left:auto"></span></h2>
+  <div class="legend">
+    <span><i class="i-open"></i>可预约</span>
+    <span><i class="i-half"></i>部分不可约</span>
+    <span><i class="i-full"></i>已约满</span>
+    <span><i class="i-closed"></i>不可预约</span>
+  </div>
+  <div class="cal-nav">
+    <button onclick="prevMonth()">‹ 上月</button>
+    <div class="ym" id="calTitle"></div>
+    <button onclick="nextMonth()">下月 ›</button>
+  </div>
+  <div class="cal-head">
+    <span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span>
+  </div>
+  <div class="cal-grid" id="calGrid"></div>
+  <div class="cal-hint">半红：上半=午宴不可约，下半=晚宴不可约</div>
+</div>
+
+<div class="footer">数据由门店后台自动同步 · 打开页面自动检查更新</div>
+
+<script>
+// ============ 数据加载 ============
+var DATA_URL = "schedule.json";
+var LS_KEY = "schedule_snapshot_v1";
+var LS_STORE = "schedule_store_v1";
+
+var state = {
+  data: null,        // 最新档期数据
+  lastSeen: null,    // 用户上次看到的数据（localStorage）
+  storeIndex: 0,     // 当前选中的门店
+  year: 0, month: 0, // 当前显示的月份
+  changedDates: {}   // date -> 'closed' | 'open' 本次新增的变化
+};
+
+// ============ 工具函数 ============
+function pad(n) { return n < 10 ? "0" + n : "" + n; }
+function fmtDate(d) { return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()); }
+function weekdayCN(d) { return "日一二三四五六"[d.getDay()]; }
+function parseISO(s) {
+  var p = s.split("-");
+  return new Date(+p[0], +p[1] - 1, +p[2]);
+}
+
+// ============ 门店 ============
+var ALL_STORES = -1;   // storeIndex 特殊值：汇总视图
+
+function curStore() {
+  return state.data.stores[state.storeIndex];
+}
+
+function renderStoreBar() {
+  var bar = document.getElementById("storeBar");
+  bar.innerHTML = "";
+  // 汇总按钮
+  var allBtn = document.createElement("button");
+  allBtn.className = "store-btn" + (state.storeIndex === ALL_STORES ? " active" : "");
+  allBtn.textContent = "📋 全部汇总";
+  allBtn.onclick = function () {
+    state.storeIndex = ALL_STORES;
+    try { localStorage.setItem(LS_STORE, ALL_STORES); } catch (e) {}
+    renderStoreBar();
+    renderAll();
+  };
+  bar.appendChild(allBtn);
+  // 各门店按钮
+  state.data.stores.forEach(function (s, i) {
+    var btn = document.createElement("button");
+    btn.className = "store-btn" + (i === state.storeIndex ? " active" : "");
+    btn.textContent = s.store_name;
+    btn.onclick = function () {
+      state.storeIndex = i;
+      try { localStorage.setItem(LS_STORE, i); } catch (e) {}
+      renderStoreBar();
+      renderAll();
+    };
+    bar.appendChild(btn);
+  });
+}
+
+// ============ 变化检测（按午宴/晚宴维度） ============
+function diffMeal(prevList, curList) {
+  var changed = {};
+  var prevSet = {}, curSet = {};
+  (prevList || []).forEach(function (d) { prevSet[d] = 1; });
+  (curList || []).forEach(function (d) { curSet[d] = 1; });
+  (curList || []).forEach(function (d) { if (!prevSet[d]) changed[d] = "closed"; });
+  (prevList || []).forEach(function (d) { if (!curSet[d]) changed[d] = "open"; });
+  return changed;
+}
+
+function diffStore(prevStore, curStoreData) {
+  var changed = {};
+  if (!prevStore) return changed;
+  ["lunch_closed_dates", "dinner_closed_dates"].forEach(function (field) {
+    var sub = diffMeal(prevStore[field], curStoreData[field]);
+    Object.keys(sub).forEach(function (d) { changed[d] = sub[d]; });
+  });
+  return changed;
+}
+
+// ============ 日历渲染 ============
+function renderCalendar() {
+  var grid = document.getElementById("calGrid");
+  grid.innerHTML = "";
+  document.getElementById("calTitle").textContent = state.year + "年" + (state.month + 1) + "月";
+  var first = new Date(state.year, state.month, 1);
+  var daysInMonth = new Date(state.year, state.month + 1, 0).getDate();
+  var startWeek = first.getDay();
+  var s = curStore();
+  var lunchClosedSet = {}, dinnerClosedSet = {};
+  (s.lunch_closed_dates || []).forEach(function (d) { lunchClosedSet[d] = 1; });
+  (s.dinner_closed_dates || []).forEach(function (d) { dinnerClosedSet[d] = 1; });
+  // 展示范围：范围外的日期不标记（灰色/未开放）
+  var rangeStart = s.range_start || "0000-00-00";
+  var rangeEnd = s.range_end || "9999-99-99";
+
+  var todayStr = fmtDate(new Date());
+  var cells = [];
+  for (var i = 0; i < startWeek; i++) cells.push('<div class="day other-month"></div>');
+  for (var d = 1; d <= daysInMonth; d++) {
+    var ds = state.year + "-" + pad(state.month + 1) + "-" + pad(d);
+    var lc = !!lunchClosedSet[ds];   // 午宴不可约
+    var dc = !!dinnerClosedSet[ds];  // 晚宴不可约
+    var cls = ["day"];
+    var tag = "";
+    var halfBars = "";
+    var inRange = ds >= rangeStart && ds <= rangeEnd;
+
+    if (inRange && lc && dc) {
+      cls.push("closed");
+      tag = "不可约";
+    } else if (inRange && (lc || dc)) {
+      cls.push("half");
+      tag = lc ? "午宴不可约" : "晚宴不可约";
+      halfBars = lc
+        ? '<span class="half-bar top"></span>'
+        : '<span class="half-bar bottom"></span>';
+    } else if (inRange) {
+      cls.push("open");
+      tag = "可约";
+    } else {
+      tag = "未开放";
+    }
+    if (ds === todayStr) cls.push("today");
+    if (state.changedDates[ds]) cls.push("changed");
+    cells.push('<div class="' + cls.join(" ") + '" data-date="' + ds + '">' + halfBars + '<span class="d">' + d + '</span><span class="tag">' + tag + '</span></div>');
+  }
+  while (cells.length % 7 !== 0) cells.push('<div class="day other-month"></div>');
+  grid.innerHTML = cells.join("");
+}
+
+// ============ 列表渲染（单店，横向标签） ============
+function renderList() {
+  var s = curStore();
+  var el = document.getElementById("closedDays");
+  var todayStr = fmtDate(new Date());
+  // 合并午宴/晚宴不可约日期 -> 按天聚合
+  var dayMap = {};
+  (s.lunch_closed_dates || []).forEach(function (d) { if (d >= todayStr) { if (!dayMap[d]) dayMap[d] = {}; dayMap[d].lunch = true; } });
+  (s.dinner_closed_dates || []).forEach(function (d) { if (d >= todayStr) { if (!dayMap[d]) dayMap[d] = {}; dayMap[d].dinner = true; } });
+  var days = Object.keys(dayMap).sort();
+
+  if (!days.length) {
+    el.innerHTML = '<div class="none">✅ 近期均可预约</div>';
+    return;
+  }
+  var MAX = 30;
+  var show = days.slice(0, MAX);
+  el.innerHTML = '<div class="chips-wrap">' + show.map(function (d) {
+    var dt = parseISO(d);
+    var meals = [];
+    if (dayMap[d].lunch) meals.push('<span class="m lunch">午宴</span>');
+    if (dayMap[d].dinner) meals.push('<span class="m dinner">晚宴</span>');
+    var label = meals.length ? meals.join("") : '<span class="m none">全天</span>';
+    return '<span class="closed-day"><span class="cd-date">' + (dt.getMonth() + 1) + "月" + dt.getDate() + "日 <span class='w'>周" + weekdayCN(dt) + "</span></span><span class='cd-meals'>" + label + "</span></span>";
+  }).join("") + "</div>" + (days.length > MAX ? '<div class="none">...共 ' + days.length + " 天不可预约</div>" : "");
+}
+
+// ============ 列表渲染（汇总视图：按城市/门店整合） ============
+function renderAllStores() {
+  var el = document.getElementById("closedDays");
+  var todayStr = fmtDate(new Date());
+  var CITY_ORDER = ["上海", "杭州", "深圳"];
+
+  // 按城市分组
+  var groups = {};
+  state.data.stores.forEach(function (s) {
+    var city = (s.store_name || "").split("·")[0];
+    if (CITY_ORDER.indexOf(city) === -1) return;
+    if (!groups[city]) groups[city] = [];
+    groups[city].push(s);
+  });
+
+  var html = "";
+  var totalDays = 0;
+  CITY_ORDER.forEach(function (city) {
+    var stores = groups[city];
+    if (!stores) return;
+    html += '<div class="city-group"><div class="city-title">' + city + "</div>";
+    stores.forEach(function (s) {
+      // 聚合该门店不可约日期 -> 按天
+      var dayMap = {};
+      (s.lunch_closed_dates || []).forEach(function (d) { if (d >= todayStr) { if (!dayMap[d]) dayMap[d] = {}; dayMap[d].lunch = true; } });
+      (s.dinner_closed_dates || []).forEach(function (d) { if (d >= todayStr) { if (!dayMap[d]) dayMap[d] = {}; dayMap[d].dinner = true; } });
+      var days = Object.keys(dayMap).sort();
+      if (!days.length) return;
+      totalDays += days.length;
+      html += '<div class="store-sub">' + s.store_name + "</div>";
+      var MAX = 15;
+      var show = days.slice(0, MAX);
+      html += '<div class="chips-wrap">';
+      show.forEach(function (d) {
+        var dt = parseISO(d);
+        var meals = [];
+        if (dayMap[d].lunch) meals.push('<span class="m lunch">午宴</span>');
+        if (dayMap[d].dinner) meals.push('<span class="m dinner">晚宴</span>');
+        var label = meals.length ? meals.join("") : '<span class="m none">全天</span>';
+        html += '<span class="closed-day"><span class="cd-date">' + (dt.getMonth() + 1) + "月" + dt.getDate() + "日 <span class='w'>周" + weekdayCN(dt) + "</span></span><span class='cd-meals'>" + label + "</span></span>";
+      });
+      html += "</div>";
+      if (days.length > MAX) html += '<div class="none">...共 ' + days.length + " 天</div>";
+    });
+    html += "</div>";
+  });
+
+  el.innerHTML = totalDays ? html : '<div class="none">✅ 近期均可预约</div>';
+}
+
+// ============ 页面初始化 ============
+function renderAll() {
+  var calCard = document.getElementById("calCard");
+  if (state.storeIndex === ALL_STORES) {
+    // 汇总视图：隐藏日历，显示整合列表
+    calCard.style.display = "none";
+    document.getElementById("listCardTitle").textContent = "全部门店不可预约日期";
+    renderAllStores();
+  } else {
+    var s = curStore();
+    calCard.style.display = "block";
+    document.getElementById("curStore").textContent = s.store_name;
+    document.getElementById("listCardTitle").textContent = "近期不可预约日期";
+    renderCalendar();
+    renderList();
+  }
+}
+
+function applyData() {
+  var d = state.data;
+  document.getElementById("updatedAt").textContent = "更新于 " + (d.updated_at || "—");
+
+  // 变化：服务端 changes（按门店）+ 用户上次所见对比
+  var allChanged = {};   // store_id -> {date: status}
+  var s = curStore();
+  var changed = {};
+  (d.changes || []).forEach(function (c) {
+    if (!allChanged[c.store_id]) allChanged[c.store_id] = {};
+    allChanged[c.store_id][c.date] = c.status;
+    if (c.store_id === s.store_id) changed[c.date] = c.status;
+  });
+  var lsStore = state.lastSeen && state.lastSeen.stores ? state.lastSeen.stores[state.storeIndex] : null;
+  var ls = diffStore(lsStore, s);
+  Object.keys(ls).forEach(function (k) { if (!changed[k]) changed[k] = ls[k]; });
+  state.changedDates = changed;
+
+  // 横幅：汇总所有门店的变化
+  var banner = document.getElementById("banner");
+  var bannerText = document.getElementById("bannerText");
+  var parts = [];
+  var storeNameMap = {};
+  state.data.stores.forEach(function (st) { storeNameMap[st.store_id] = st.store_name; });
+  Object.keys(allChanged).forEach(function (sid) {
+    var perStore = allChanged[sid];
+    var closed = [], open = [];
+    Object.keys(perStore).forEach(function (date) {
+      if (perStore[date] === "closed") closed.push(date);
+      else open.push(date);
+    });
+    closed.sort(); open.sort();
+    var name = storeNameMap[sid] || ("门店" + sid);
+    var sub = [];
+    if (closed.length) sub.push("新增不可预约 <b class='closed'>" + closed.map(function (x) { return x.slice(5).replace("-", "月") + "日"; }).join("、") + "</b>");
+    if (open.length) sub.push("恢复可预约 <b class='open'>" + open.map(function (x) { return x.slice(5).replace("-", "月") + "日"; }).join("、") + "</b>");
+    if (sub.length) parts.push("【" + name + "】" + sub.join("；"));
+  });
+  var lsKeys = Object.keys(ls);
+  if (lsKeys.length) {
+    var lc = [], lo = [];
+    lsKeys.forEach(function (date) {
+      if (ls[date] === "closed") lc.push(date);
+      else lo.push(date);
+    });
+    lc.sort(); lo.sort();
+    var sub2 = [];
+    if (lc.length) sub2.push("新增不可预约 <b class='closed'>" + lc.map(function (x) { return x.slice(5).replace("-", "月") + "日"; }).join("、") + "</b>");
+    if (lo.length) sub2.push("恢复可预约 <b class='open'>" + lo.map(function (x) { return x.slice(5).replace("-", "月") + "日"; }).join("、") + "</b>");
+    if (sub2.length) parts.push("【" + s.store_name + "】较上次查看" + sub2.join("；"));
+  }
+
+  if (parts.length) {
+    var prefix = state.lastSeen ? "较上次查看，档期有更新：" : "最近档期有变动：";
+    bannerText.innerHTML = prefix + parts.join("<br>");
+    banner.className = "banner show";
+  } else {
+    banner.className = "banner";
+    bannerText.innerHTML = "";
+  }
+
+  renderStoreBar();
+  renderAll();
+  saveSnapshot();
+}
+
+function saveSnapshot() {
+  try {
+    localStorage.setItem(LS_KEY, JSON.stringify({
+      stores: (state.data.stores || []).map(function (s) {
+        return { lunch_closed_dates: s.lunch_closed_dates, dinner_closed_dates: s.dinner_closed_dates };
+      }),
+      updated_at: state.data.updated_at
+    }));
+  } catch (e) { /* 忽略 */ }
+}
+
+function loadData() {
+  fetch(DATA_URL, { cache: "no-store" })
+    .then(function (r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
+    .then(function (json) {
+      state.data = json;
+      var now = new Date();
+      state.year = now.getFullYear();
+      state.month = now.getMonth();
+      try {
+        var saved = localStorage.getItem(LS_STORE);
+        var idx = parseInt(saved, 10);
+        if (idx === ALL_STORES) state.storeIndex = ALL_STORES;
+        else if (!isNaN(idx) && json.stores[idx]) state.storeIndex = idx;
+      } catch (e) {}
+      try {
+        state.lastSeen = JSON.parse(localStorage.getItem(LS_KEY));
+      } catch (e) { state.lastSeen = null; }
+      applyData();
+    })
+    .catch(function (err) {
+      document.getElementById("banner").innerHTML = "<div class='t'>⚠️ 数据加载失败</div><div>请检查网络后刷新页面（" + err.message + "）</div>";
+      document.getElementById("banner").className = "banner show";
+    });
+}
+
+function prevMonth() {
+  state.month--;
+  if (state.month < 0) { state.month = 11; state.year--; }
+  renderCalendar();
+}
+function nextMonth() {
+  state.month++;
+  if (state.month > 11) { state.month = 0; state.year++; }
+  renderCalendar();
+}
+
+loadData();
+</script>
+</body>
+</html>
