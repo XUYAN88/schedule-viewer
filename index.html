@@ -80,20 +80,6 @@
   .refresh-btn:active { transform:scale(.9); background:rgba(255,255,255,.32); }
   .refresh-btn.spinning { animation:spin .9s linear infinite; }
 
-  /* ===== 预订规则提示 ===== */
-  .rule-bar {
-    margin:12px; padding:14px 16px; border-radius:16px;
-    background:linear-gradient(135deg,#fdf6ec,#fbf0dd); border:1px solid #ecd9b4;
-    font-size:12px; line-height:1.9; color:#7a5c22;
-    box-shadow:0 2px 12px rgba(60,40,20,.05);
-  }
-  .rule-bar .t { font-weight:700; display:flex; align-items:center; gap:6px; margin-bottom:5px; font-size:13px; }
-  .rule-bar .row { display:flex; align-items:baseline; gap:8px; }
-  .rule-bar .row .time { min-width:46px; font-weight:700; color:#b8432f; }
-  .rule-bar .row .desc { color:#8a6d3d; }
-  .rule-bar b { color:#b8432f; }
-  .rule-bar .tip { color:#a08a5c; font-size:11px; margin-top:5px; padding-top:7px; border-top:1px dashed #ecd9b4; }
-
   /* ===== 门店切换 ===== */
   .store-bar {
     display:flex; gap:8px; overflow-x:auto; padding:12px 12px 14px;
@@ -255,14 +241,6 @@
 <div class="banner" id="banner">
   <div class="t">⚠️ 档期有更新</div>
   <div id="bannerText"></div>
-</div>
-
-<!-- 预订规则说明 -->
-<div class="rule-bar">
-  <div class="t">📌 预订规则</div>
-  <div class="row"><span class="time">午宴</span><span class="desc">当天 <b>11:50</b> 开场前停止预订</span></div>
-  <div class="row"><span class="time">晚宴</span><span class="desc">当天 <b>18:50</b> 开场前停止预订</span></div>
-  <div class="tip">开场前未预定的当天场次无法预约，请提前安排</div>
 </div>
 
 <!-- 不可预约日期（置顶） -->
