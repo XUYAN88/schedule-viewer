@@ -204,7 +204,7 @@
     <span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span>
   </div>
   <div class="cal-grid" id="calGrid"></div>
-  <div class="cal-hint">半红：上半=午宴不可约，下半=晚宴不可约</div>
+  <div class="cal-hint">半红：上半=午宴不可约，下半=晚宴不可约 · 当天11:00后午宴不可订，17:30后晚宴不可订</div>
 </div>
 
 <div class="footer">数据由门店后台自动同步 · 打开页面自动检查更新</div>
@@ -230,6 +230,20 @@ function weekdayCN(d) { return "日一二三四五六"[d.getDay()]; }
 function parseISO(s) {
   var p = s.split("-");
   return new Date(+p[0], +p[1] - 1, +p[2]);
+}
+
+// 当天截止时间：11:00 后午宴不可订，17:30 后晚宴不可订
+var LUNCH_DEADLINE = 11 * 60;      // 11:00
+var DINNER_DEADLINE = 17 * 60 + 30; // 17:30
+
+function mealExpired(ds, meal) {
+  // ds: 'YYYY-MM-DD'，meal: 'lunch' | 'dinner'
+  if (ds !== fmtDate(new Date())) return false;
+  var now = new Date();
+  var minutes = now.getHours() * 60 + now.getMinutes();
+  if (meal === "lunch") return minutes >= LUNCH_DEADLINE;
+  if (meal === "dinner") return minutes >= DINNER_DEADLINE;
+  return false;
 }
 
 // ============ 门店 ============
@@ -312,6 +326,10 @@ function renderCalendar() {
     var ds = state.year + "-" + pad(state.month + 1) + "-" + pad(d);
     var lc = !!lunchClosedSet[ds];   // 午宴不可约
     var dc = !!dinnerClosedSet[ds];  // 晚宴不可约
+    var lExpired = mealExpired(ds, "lunch");
+    var dExpired = mealExpired(ds, "dinner");
+    if (lExpired) lc = true;
+    if (dExpired) dc = true;
     var cls = ["day"];
     var tag = "";
     var halfBars = "";
@@ -319,10 +337,12 @@ function renderCalendar() {
 
     if (inRange && lc && dc) {
       cls.push("closed");
-      tag = "不可约";
+      tag = lExpired && dExpired ? "已过" : "不可约";
     } else if (inRange && (lc || dc)) {
       cls.push("half");
-      tag = lc ? "午宴不可约" : "晚宴不可约";
+      if (lc && dExpired && !dc) tag = "晚宴已过";
+      else if (dc && lExpired && !lc) tag = "午宴已过";
+      else tag = lc ? "午宴不可约" : "晚宴不可约";
       halfBars = lc
         ? '<span class="half-bar top"></span>'
         : '<span class="half-bar bottom"></span>';
@@ -349,6 +369,9 @@ function renderList() {
   var dayMap = {};
   (s.lunch_closed_dates || []).forEach(function (d) { if (d >= todayStr) { if (!dayMap[d]) dayMap[d] = {}; dayMap[d].lunch = true; } });
   (s.dinner_closed_dates || []).forEach(function (d) { if (d >= todayStr) { if (!dayMap[d]) dayMap[d] = {}; dayMap[d].dinner = true; } });
+  // 当天已过时间点的餐别也算不可约
+  if (mealExpired(todayStr, "lunch")) { if (!dayMap[todayStr]) dayMap[todayStr] = {}; dayMap[todayStr].lunch = true; }
+  if (mealExpired(todayStr, "dinner")) { if (!dayMap[todayStr]) dayMap[todayStr] = {}; dayMap[todayStr].dinner = true; }
   var days = Object.keys(dayMap).sort();
 
   if (!days.length) {
@@ -360,8 +383,8 @@ function renderList() {
   el.innerHTML = '<div class="chips-wrap">' + show.map(function (d) {
     var dt = parseISO(d);
     var meals = [];
-    if (dayMap[d].lunch) meals.push('<span class="m lunch">午宴</span>');
-    if (dayMap[d].dinner) meals.push('<span class="m dinner">晚宴</span>');
+    if (dayMap[d].lunch) meals.push('<span class="m lunch">' + (mealExpired(d, "lunch") ? "午宴已过" : "午宴") + "</span>");
+    if (dayMap[d].dinner) meals.push('<span class="m dinner">' + (mealExpired(d, "dinner") ? "晚宴已过" : "晚宴") + "</span>");
     var label = meals.length ? meals.join("") : '<span class="m none">全天</span>';
     return '<span class="closed-day"><span class="cd-date">' + (dt.getMonth() + 1) + "月" + dt.getDate() + "日 <span class='w'>周" + weekdayCN(dt) + "</span></span><span class='cd-meals'>" + label + "</span></span>";
   }).join("") + "</div>" + (days.length > MAX ? '<div class="none">...共 ' + days.length + " 天不可预约</div>" : "");
@@ -393,6 +416,9 @@ function renderAllStores() {
       var dayMap = {};
       (s.lunch_closed_dates || []).forEach(function (d) { if (d >= todayStr) { if (!dayMap[d]) dayMap[d] = {}; dayMap[d].lunch = true; } });
       (s.dinner_closed_dates || []).forEach(function (d) { if (d >= todayStr) { if (!dayMap[d]) dayMap[d] = {}; dayMap[d].dinner = true; } });
+      // 当天已过时间点的餐别也算不可约
+      if (mealExpired(todayStr, "lunch")) { if (!dayMap[todayStr]) dayMap[todayStr] = {}; dayMap[todayStr].lunch = true; }
+      if (mealExpired(todayStr, "dinner")) { if (!dayMap[todayStr]) dayMap[todayStr] = {}; dayMap[todayStr].dinner = true; }
       var days = Object.keys(dayMap).sort();
       if (!days.length) return;
       totalDays += days.length;
@@ -403,8 +429,8 @@ function renderAllStores() {
       show.forEach(function (d) {
         var dt = parseISO(d);
         var meals = [];
-        if (dayMap[d].lunch) meals.push('<span class="m lunch">午宴</span>');
-        if (dayMap[d].dinner) meals.push('<span class="m dinner">晚宴</span>');
+        if (dayMap[d].lunch) meals.push('<span class="m lunch">' + (mealExpired(d, "lunch") ? "午宴已过" : "午宴") + "</span>");
+        if (dayMap[d].dinner) meals.push('<span class="m dinner">' + (mealExpired(d, "dinner") ? "晚宴已过" : "晚宴") + "</span>");
         var label = meals.length ? meals.join("") : '<span class="m none">全天</span>';
         html += '<span class="closed-day"><span class="cd-date">' + (dt.getMonth() + 1) + "月" + dt.getDate() + "日 <span class='w'>周" + weekdayCN(dt) + "</span></span><span class='cd-meals'>" + label + "</span></span>";
       });
