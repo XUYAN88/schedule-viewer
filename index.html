@@ -158,7 +158,6 @@
   .day.other-month { visibility:hidden; }
   .day.today { outline:2px solid var(--red); outline-offset:1px; }
 
-  /* 半红：上半=午宴不可约，下半=晚宴不可约 */
   .day.half { background:#faf8f5; color:#3d3128; }
   .day.half .half-bar { position:absolute; left:0; right:0; height:50%; z-index:0; }
   .day.half .half-bar.top { top:0; background:#e5645c; border-radius:11px 11px 0 0; }
@@ -176,8 +175,6 @@
     font-size:7px; font-weight:800; padding:1px 4px; border-radius:6px; z-index:2;
     box-shadow:0 1px 3px rgba(0,0,0,.2);
   }
-
-  .cal-hint { font-size:10px; color:var(--faint); margin-top:10px; text-align:center; letter-spacing:.5px; }
 
   /* ===== 不可约日期（横向排列标签） ===== */
   .city-group { margin-bottom:18px; }
@@ -267,7 +264,6 @@
     <span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span>
   </div>
   <div class="cal-grid" id="calGrid"></div>
-  <div class="cal-hint">半红：上半=午宴不可约，下半=晚宴不可约 · 当天11:50后午宴不显示，18:50后晚宴不显示</div>
 </div>
 
 <div class="footer">数据由门店后台自动同步 · 打开页面自动检查更新</div>
