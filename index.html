@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-<title>档期查询</title>
+<title>档期查询（后台数据预览）</title>
 <style>
   :root {
     --red:#a83226; --red-deep:#8c2a20; --red-dark:#7a231a;
@@ -155,7 +155,7 @@
   .day.full { background:linear-gradient(160deg,#e8a13c,#de9430); color:#fff; border-color:transparent; box-shadow:0 3px 8px rgba(232,161,60,.32); }
   .day.open { background:linear-gradient(160deg,#4caf7d,#3e9c6e); color:#fff; border-color:transparent; box-shadow:0 3px 8px rgba(76,175,125,.28); }
   .day.closed .tag, .day.full .tag, .day.open .tag { color:rgba(255,255,255,.94); }
-  .day.other-month { visibility:hidden; }
+  .day.other-month { visibility:hidden; background:transparent; border:none; box-shadow:none; }
   .day.today { outline:2px solid var(--red); outline-offset:1px; }
 
   .day.half { background:#faf8f5; color:#3d3128; }
@@ -226,8 +226,8 @@
 
 <div class="header">
   <button class="refresh-btn" id="refreshBtn" onclick="refreshCurrent()" aria-label="刷新档期">🔄</button>
-  <h1>🏮 档期查询</h1>
-  <div class="sub">红色为不可预约 · 请合理安排时间</div>
+  <h1>🏮 档期查询 <span style="font-size:10px;background:rgba(255,255,255,.2);padding:2px 8px;border-radius:8px;letter-spacing:1px;vertical-align:middle">后台数据预览</span></h1>
+  <div class="sub">红色为不可预约 · 含后台已排期未对外档期</div>
   <div class="updated" id="updatedAt"></div>
 </div>
 
@@ -306,12 +306,15 @@ function mealExpired(ds, meal) {
   return false;
 }
 
-// ============ 实时数据接口（只读 GET，接口支持 CORS） ============
+// ============ 实时数据接口（后台统计接口，无账号只读） ============
 var API_BASE = "https://xy.duoxijoy.cn/api/xuyan";
+var ADMIN_API = "https://xy.duoxijoy.cn/adminapi";
 var CITY_LIST_URL = "https://xy.duoxijoy.cn/api/xuyan/get_city_list";
 var DATES_URL = API_BASE + "/schedule/dates";
 var PAGE_LIST_URL = API_BASE + "/schedule/pagination_list";
-var REQUEST_GAP = 200; // 请求间隔毫秒
+var DAY_SCHED_URL = ADMIN_API + "/statistic/day/schedules";
+var DASHBOARD_URL = ADMIN_API + "/statistic/schedule/dashboard/";
+var REQUEST_GAP = 150; // 请求间隔毫秒
 
 function apiGet(url, params) {
   var qs = "";
@@ -326,49 +329,169 @@ function apiGet(url, params) {
   });
 }
 
-// 实时拉取某门店档期状态（与 fetch_schedule.py 相同的判定逻辑）
-function fetchStoreRealTime(store) {
-  return apiGet(DATES_URL, { store_id: store.id }).then(function (d) {
-    var dates = (d.data || []).map(function (x) { return String(x).slice(0, 10); }).sort();
+// ============ 门店数据缓存（60秒内存缓存，避免重复请求） ============
+var storeCache = {};
+var CACHE_TTL = 60 * 1000; // 60 秒
+
+function cacheGet(key) {
+  var c = storeCache[key];
+  if (c && Date.now() - c.t < CACHE_TTL) return c.v;
+  return null;
+}
+function cacheSet(key, val) {
+  storeCache[key] = { t: Date.now(), v: val };
+}
+
+// 并发限制：同时最多发 MAX_CONC 个请求
+function runBatch(tasks, maxConcurrent) {
+  var idx = 0;
+  var results = new Array(tasks.length);
+  function next() {
+    if (idx >= tasks.length) return Promise.resolve();
+    var i = idx++;
+    return Promise.resolve().then(tasks[i]).then(function (r) { results[i] = r; }).catch(function () { results[i] = null; })
+      .then(function () { return next(); });
+  }
+  var workers = [];
+  for (var w = 0; w < Math.min(maxConcurrent, tasks.length); w++) workers.push(next());
+  return Promise.all(workers).then(function () { return results; });
+}
+
+// 从后台 full_rate 拿近期窗口（约25天），避免逐日扫描
+function fetchRecentWindow(storeId) {
+  var cacheKey = "window_" + storeId;
+  var cached = cacheGet(cacheKey);
+  if (cached) return Promise.resolve(cached);
+  return Promise.all([
+    apiGet(ADMIN_API + "/statistic/schedule/full_rate", { store_id: storeId, banquet_type: 1 }),
+    apiGet(ADMIN_API + "/statistic/schedule/full_rate", { store_id: storeId, banquet_type: 2 })
+  ]).then(function (res) {
+    var lunch = res[0].data || [];
+    var dinner = res[1].data || [];
+    var dayMap = {};
+    // scheduleTime 格式 "MM.DD"，年份用当前年份（跨年时用当年，后台窗口一般为当年）
+    var yearNow = new Date().getFullYear();
+    lunch.forEach(function (x) {
+      var d = x.scheduleTime.split(".");
+      var ds = yearNow + "-" + d[0] + "-" + d[1];
+      if (!dayMap[ds]) dayMap[ds] = {};
+      dayMap[ds].lunch = { id: x.scheduleId, booking: x.bookingCount, total: x.totalCount, lock: x.lockCount };
+    });
+    dinner.forEach(function (x) {
+      var d = x.scheduleTime.split(".");
+      var ds = yearNow + "-" + d[0] + "-" + d[1];
+      if (!dayMap[ds]) dayMap[ds] = {};
+      dayMap[ds].dinner = { id: x.scheduleId, booking: x.bookingCount, total: x.totalCount, lock: x.lockCount };
+    });
+    cacheSet(cacheKey, dayMap);
+    return dayMap;
+  });
+}
+
+// 实时拉取某门店档期状态（后台接口：能看到未对外的完整档期）
+function fetchStoreRealTime(store, force) {
+  var cacheKey = "store_" + store.id;
+  var cached = cacheGet(cacheKey);
+  if (cached && !force) return Promise.resolve(cached);
+
+  return fetchRecentWindow(store.id).then(function (windowMap) {
     var todayStr = fmtDate(new Date());
-    var dayMap = {};  // date -> {lunch: state, dinner: state}  state: open/full/closed
-    var rangeEnd = dates.length ? dates[dates.length - 1] : todayStr;
-    var rangeStart = dates.length && dates[0] < todayStr ? dates[0] : todayStr;
-    var cursor = parseISO(rangeStart);
-    var endD = parseISO(rangeEnd);
-    var tasks = [];
+    var dayMap = {};
+    // 先放窗口数据
+    Object.keys(windowMap).forEach(function (ds) { dayMap[ds] = windowMap[ds]; });
+    // 只扫描显示范围内的日期（本周+2周到maxDate），窗口外的场次才需要 dashboard
+    var nowD = new Date();
+    var daysToSunday = (7 - nowD.getDay()) % 7;
+    var maxDate = fmtDate(new Date(nowD.getTime() + (daysToSunday + 14) * 24 * 3600 * 1000));
+    var scanDays = [];
+    var cursor = parseISO(todayStr);
+    var endD = parseISO(maxDate);
     while (cursor <= endD) {
-      (function (dayStr) {
-        if (dates.indexOf(dayStr) === -1) {
-          // 店休/未开放
-          dayMap[dayStr] = { lunch: "closed", dinner: "closed" };
-          return;
-        }
-        tasks.push(apiGet(PAGE_LIST_URL, { store_id: store.id, schedule_day: dayStr + " 00:00:00", page: 1, limit: 50 }).then(function (r2) {
-          var items = (r2.data && r2.data.list) || [];
-          var lunch = items.filter(function (it) { return it.banquetType === 1; });
-          var dinner = items.filter(function (it) { return it.banquetType === 2; });
-          function partState(list) {
-            if (!list.length) return "closed";
-            var open = list.filter(function (it) { return it.scheduleState === 1 && (it.seatLeftCount || 0) > 0; });
-            return open.length ? "open" : "full";
-          }
-          dayMap[dayStr] = { lunch: partState(lunch), dinner: partState(dinner) };
-        }));
-      })(fmtDate(cursor));
+      var ds = fmtDate(cursor);
+      if (!dayMap[ds]) scanDays.push(ds);
       cursor.setDate(cursor.getDate() + 1);
     }
-    return Promise.all(tasks).then(function () {
-      // 组装与 schedule.json 相同结构
-      var lunchClosed = [], dinnerClosed = [], open = [], full = [], closed = [];
+    var scanTasks = scanDays.map(function (dayStr) {
+      return function () {
+        return apiGet(DAY_SCHED_URL, { store_id: store.id, date: dayStr }).then(function (r) {
+          var items = r.data || [];
+          var m = {};
+          items.forEach(function (it) {
+            var meal = it.banquetType === 1 ? "lunch" : (it.banquetType === 2 ? "dinner" : null);
+            if (meal) m[meal] = { id: it.id, booking: null, total: null, lock: null, sessionOnly: true };
+          });
+          dayMap[dayStr] = m;
+        });
+      };
+    });
+    // 并发扫描（每批 8 个）
+    return runBatch(scanTasks, 8).then(function () {
+      // 清理：去掉完全没有场次的日期
       Object.keys(dayMap).forEach(function (ds) {
-        var st = dayMap[ds];
-        if (st.lunch !== "open") lunchClosed.push(ds);
-        if (st.dinner !== "open") dinnerClosed.push(ds);
-        if (st.lunch === "open" || st.dinner === "open") open.push(ds);
-        else if (st.lunch === "full" || st.dinner === "full") full.push(ds);
+        var m = dayMap[ds];
+        if (!m.lunch && !m.dinner) delete dayMap[ds];
+      });
+      // 对缺少 booking 数据的场次拉 dashboard（并发批次）
+      var dashTasks = [];
+      Object.keys(dayMap).forEach(function (ds) {
+        var m = dayMap[ds];
+        ["lunch", "dinner"].forEach(function (meal) {
+          var s = m[meal];
+          if (s && s.id && (s.booking === null || s.scheduleState === undefined)) {
+            dashTasks.push(function () {
+              return apiGet(DASHBOARD_URL + s.id, {}).then(function (dr) {
+                var dd = dr.data || {};
+                s.booking = dd.bookingSeatCount;
+                s.total = dd.allSeatsCount;
+                s.lock = dd.seatLockCount;
+                s.fullDes = dd.fullStateDes;
+                s.scheduleState = dd.scheduleState;
+              });
+            });
+          }
+        });
+      });
+      return runBatch(dashTasks, 8);
+    }).then(function () {
+      // 组装与线上相同结构（只保留今天及以后）
+      var lunchClosed = [], dinnerClosed = [], open = [], full = [], closed = [];
+      // 先计算范围：从今天到最后一个有场次的日期
+      var allKeys = Object.keys(dayMap).filter(function (ds) { return ds >= todayStr; }).sort();
+      var rangeEnd2 = allKeys.length ? allKeys[allKeys.length - 1] : todayStr;
+      // 范围内缺失的日期 = 关闭（店休/未开放），与线上一致
+      var cursor2 = parseISO(todayStr);
+      var endD2 = parseISO(rangeEnd2);
+      while (cursor2 <= endD2) {
+        var ds2 = fmtDate(cursor2);
+        if (!dayMap[ds2]) {
+          lunchClosed.push(ds2); dinnerClosed.push(ds2); closed.push(ds2);
+        }
+        cursor2.setDate(cursor2.getDate() + 1);
+      }
+      Object.keys(dayMap).forEach(function (ds) {
+        if (ds < todayStr) return; // 过去的日期不展示
+        var m = dayMap[ds];
+        var lunchState = "closed", dinnerState = "closed";
+        if (m.lunch && m.lunch.id) {
+          // 已建场次即可预订：未约满(booking<total) 且 未全锁(lock<total) = 可订
+          if (m.lunch.booking !== null && m.lunch.total !== null &&
+              m.lunch.booking < m.lunch.total && (m.lunch.lock || 0) < m.lunch.total) {
+            lunchState = "open";
+          } else lunchState = "full";
+        }
+        if (m.dinner && m.dinner.id) {
+          if (m.dinner.booking !== null && m.dinner.total !== null &&
+              m.dinner.booking < m.dinner.total && (m.dinner.lock || 0) < m.dinner.total) {
+            dinnerState = "open";
+          } else dinnerState = "full";
+        }
+        if (lunchState !== "open") lunchClosed.push(ds);
+        if (dinnerState !== "open") dinnerClosed.push(ds);
+        if (lunchState === "open" || dinnerState === "open") open.push(ds);
+        else if (lunchState === "full" || dinnerState === "full") full.push(ds);
         else closed.push(ds);
       });
+      var allDays = Object.keys(dayMap).sort();
       return {
         store_id: store.id,
         store_name: store.name,
@@ -377,10 +500,14 @@ function fetchStoreRealTime(store) {
         closed_dates: closed.sort(),
         lunch_closed_dates: lunchClosed.sort(),
         dinner_closed_dates: dinnerClosed.sort(),
-        range_start: rangeStart,
-        range_end: rangeEnd,
-        realtime: true
+        range_start: todayStr,
+        range_end: rangeEnd2,
+        realtime: true,
+        backend: true
       };
+    }).then(function (result) {
+      cacheSet(cacheKey, result);
+      return result;
     });
   });
 }
@@ -440,8 +567,13 @@ function renderCalendar() {
   // 展示范围：范围外的日期不标记（灰色/未开放）
   var rangeStart = s.range_start || "0000-00-00";
   var rangeEnd = s.range_end || "9999-99-99";
-
+  // 同步列表规则：仅显示今天这周（到本周日）+ 后面 3 整周，超出范围的日期隐藏
   var todayStr = fmtDate(new Date());
+  var nowD = new Date();
+  var daysToSunday = (7 - nowD.getDay()) % 7;
+  var maxDate = fmtDate(new Date(nowD.getTime() + (daysToSunday + 14) * 24 * 3600 * 1000));
+  if (maxDate < rangeEnd) rangeEnd = maxDate;
+
   var cells = [];
   for (var i = 0; i < startWeek; i++) cells.push('<div class="day other-month"></div>');
   for (var d = 1; d <= daysInMonth; d++) {
@@ -456,7 +588,10 @@ function renderCalendar() {
     var halfBars = "";
     var inRange = ds >= rangeStart && ds <= rangeEnd;
 
-    if (lExpired && dExpired) {
+    if (ds > maxDate) {
+      // 超出范围（本周+2周）：显示为"未开放"（灰色，不标红绿）
+      tag = "未开放";
+    } else if (lExpired && dExpired) {
       // 两餐都已过点：当天不再显示可预订状态
       cls.push("closed");
       tag = "今日已过";
@@ -488,10 +623,14 @@ function renderList() {
   var s = curStore();
   var el = document.getElementById("closedDays");
   var todayStr = fmtDate(new Date());
-  // 合并午宴/晚宴不可约日期 -> 按天聚合（已过期的日期/餐别不显示，只显示明天及以后）
+  // 与汇总视图一致：仅显示今天这周（到本周日）+ 后面 3 整周 = 21~28 天
+  var now = new Date();
+  var daysToSunday = (7 - now.getDay()) % 7;
+  var maxDate = fmtDate(new Date(now.getTime() + (daysToSunday + 14) * 24 * 3600 * 1000));
+  // 合并午宴/晚宴不可约日期 -> 按天聚合（仅显示明天起到范围内，过点餐别不显示）
   var dayMap = {};
-  (s.lunch_closed_dates || []).forEach(function (d) { if (d > todayStr && !mealExpired(d, "lunch")) { if (!dayMap[d]) dayMap[d] = {}; dayMap[d].lunch = true; } });
-  (s.dinner_closed_dates || []).forEach(function (d) { if (d > todayStr && !mealExpired(d, "dinner")) { if (!dayMap[d]) dayMap[d] = {}; dayMap[d].dinner = true; } });
+  (s.lunch_closed_dates || []).forEach(function (d) { if (d > todayStr && d <= maxDate && !mealExpired(d, "lunch")) { if (!dayMap[d]) dayMap[d] = {}; dayMap[d].lunch = true; } });
+  (s.dinner_closed_dates || []).forEach(function (d) { if (d > todayStr && d <= maxDate && !mealExpired(d, "dinner")) { if (!dayMap[d]) dayMap[d] = {}; dayMap[d].dinner = true; } });
   var days = Object.keys(dayMap).sort();
 
   if (!days.length) {
@@ -510,10 +649,14 @@ function renderList() {
   }).join("") + "</div>" + (days.length > MAX ? '<div class="none">...共 ' + days.length + " 天不可预约</div>" : "");
 }
 
-// ============ 列表渲染（汇总视图：按城市/门店整合） ============
+// ============ 列表渲染（汇总视图：按城市/门店整合，仅显示近3周） ============
 function renderAllStores() {
   var el = document.getElementById("closedDays");
   var todayStr = fmtDate(new Date());
+  // 仅显示：今天这周（到本周日）+ 后面 3 整周 = 21~28 天（取决于今天是周几）
+  var now = new Date();
+  var daysToSunday = (7 - now.getDay()) % 7; // 到本周日的天数（0=周日当天）
+  var maxDate = fmtDate(new Date(now.getTime() + (daysToSunday + 14) * 24 * 3600 * 1000));
   var CITY_ORDER = ["上海", "杭州", "深圳"];
   var cityCounts = {};
 
@@ -534,10 +677,10 @@ function renderAllStores() {
     var cityDays = 0;
     html += '<div class="city-group"><div class="city-title">' + city + '<span class="count" id="cityCount-' + city + '"></span></div>';
     stores.forEach(function (s) {
-      // 聚合该门店不可约日期 -> 按天（已过期的日期/餐别不显示，只显示明天及以后）
+      // 聚合该门店不可约日期 -> 按天（明天起 21 天内，过点餐别不显示）
       var dayMap = {};
-      (s.lunch_closed_dates || []).forEach(function (d) { if (d > todayStr && !mealExpired(d, "lunch")) { if (!dayMap[d]) dayMap[d] = {}; dayMap[d].lunch = true; } });
-      (s.dinner_closed_dates || []).forEach(function (d) { if (d > todayStr && !mealExpired(d, "dinner")) { if (!dayMap[d]) dayMap[d] = {}; dayMap[d].dinner = true; } });
+      (s.lunch_closed_dates || []).forEach(function (d) { if (d > todayStr && d <= maxDate && !mealExpired(d, "lunch")) { if (!dayMap[d]) dayMap[d] = {}; dayMap[d].lunch = true; } });
+      (s.dinner_closed_dates || []).forEach(function (d) { if (d > todayStr && d <= maxDate && !mealExpired(d, "dinner")) { if (!dayMap[d]) dayMap[d] = {}; dayMap[d].dinner = true; } });
       var days = Object.keys(dayMap).sort();
       if (!days.length) return;
       cityDays += days.length;
@@ -570,12 +713,17 @@ function renderAllStores() {
   });
 }
 
-// ============ 档期变化对比（与上次数据对比） ============
+// ============ 档期变化对比（与上次数据对比，仅限本周+2周范围） ============
 // 对比两个门店数据，返回该店的变化数组 [{store_id, date, status, detail}]
 function compareStore(prevStore, curStoreData) {
   var changes = [];
   if (!prevStore || !curStoreData) return changes;
   var storeId = curStoreData.store_id;
+  // 只对比展示范围内的日期（本周+2周）
+  var todayStr = fmtDate(new Date());
+  var nowD = new Date();
+  var daysToSunday = (7 - nowD.getDay()) % 7;
+  var maxDate = fmtDate(new Date(nowD.getTime() + (daysToSunday + 14) * 24 * 3600 * 1000));
   ["lunch", "dinner"].forEach(function (meal) {
     var prevList = prevStore[meal + "_closed_dates"] || [];
     var curList = curStoreData[meal + "_closed_dates"] || [];
@@ -583,13 +731,13 @@ function compareStore(prevStore, curStoreData) {
     prevList.forEach(function (d) { prevSet[d] = 1; });
     curList.forEach(function (d) { curSet[d] = 1; });
     var mealName = meal === "lunch" ? "午宴" : "晚宴";
-    // 新增不可约：之前可约/未开放 → 现在不可约
+    // 新增不可约：之前可约/未开放 → 现在不可约（仅范围内）
     curList.forEach(function (d) {
-      if (!prevSet[d]) changes.push({ store_id: storeId, date: d, status: "closed", detail: "新增不可约（" + mealName + "）" });
+      if (d > todayStr && d <= maxDate && !prevSet[d]) changes.push({ store_id: storeId, date: d, status: "closed", detail: "新增不可约（" + mealName + "）" });
     });
-    // 恢复可约：之前不可约 → 现在可约
+    // 恢复可约：之前不可约 → 现在可约（仅范围内）
     prevList.forEach(function (d) {
-      if (!curSet[d]) changes.push({ store_id: storeId, date: d, status: "open", detail: "恢复可约（" + mealName + "）" });
+      if (d > todayStr && d <= maxDate && !curSet[d]) changes.push({ store_id: storeId, date: d, status: "open", detail: "恢复可约（" + mealName + "）" });
     });
   });
   return changes;
@@ -681,13 +829,13 @@ function renderAll() {
   if (state.storeIndex === ALL_STORES) {
     // 汇总视图：隐藏日历，显示整合列表
     calCard.style.display = "none";
-    document.getElementById("listCardTitle").textContent = "全部门店不可预约日期（仅显示上海 杭州 深圳）";
+    document.getElementById("listCardTitle").textContent = "全部门店不可预约日期（近3周 · 上海 杭州 深圳）";
     renderAllStores();
   } else {
     var s = curStore();
     calCard.style.display = "block";
     document.getElementById("curStore").textContent = s.store_name;
-    document.getElementById("listCardTitle").textContent = "近期不可预约日期";
+    document.getElementById("listCardTitle").textContent = "近期不可预约日期（近3周）";
     renderCalendar();
     renderList();
   }
@@ -837,12 +985,12 @@ function loadData() {
   });
 }
 
-// 每次点进门店时刷新该店实时数据
+// 每次点进门店时刷新该店实时数据（强制绕过缓存）
 function refreshStoreData(storeId) {
   showRefresh();
   var store = { id: storeId, name: "" };
   state.data.stores.forEach(function (s) { if (s.store_id === storeId) { store.name = s.store_name; } });
-  return fetchStoreRealTime(store).then(function (fresh) {
+  return fetchStoreRealTime(store, true).then(function (fresh) {
     if (!fresh) return;
     for (var i = 0; i < state.data.stores.length; i++) {
       if (state.data.stores[i].store_id === storeId) {
@@ -869,7 +1017,7 @@ function refreshAllStores() {
   var tasks = state.data.stores.map(function (s, i) {
     return new Promise(function (resolve) {
       setTimeout(function () {
-        fetchStoreRealTime({ id: s.store_id, name: s.store_name }).then(function (fresh) {
+        fetchStoreRealTime({ id: s.store_id, name: s.store_name }, true).then(function (fresh) {
           if (fresh) state.data.stores[i] = fresh;
           resolve();
         }).catch(function () { resolve(); });
@@ -899,3 +1047,4 @@ loadData();
 </script>
 </body>
 </html>
+
