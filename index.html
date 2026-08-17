@@ -111,6 +111,14 @@
   .banner b.closed { color:#d32f2f; }
   .banner b.open { color:#2e7d32; }
 
+  /* ===== 温馨提示声明 ===== */
+  .notice {
+    margin:12px 12px 0; padding:12px 15px; border-radius:14px;
+    background:linear-gradient(135deg,#fdf6ec,#fbf0dd); border:1px solid #ecd9b4;
+    font-size:12px; line-height:1.8; color:#7a5c22;
+  }
+  .notice b { color:#b8432f; }
+
   /* ===== 卡片 ===== */
   .card {
     background:var(--card); margin:12px; border-radius:18px;
@@ -230,6 +238,9 @@
   <div class="sub">红色为不可预约 · 请合理安排时间</div>
   <div class="updated" id="updatedAt"></div>
 </div>
+
+<!-- 温馨提示声明 -->
+<div class="notice">📌 <b>温馨提示：</b>当前在线仅开放 <b>7-14 天</b>档期预约；<b>15-21 天</b>档期如需预订，请联系客服。页面信息仅供参考，实际以客服答复为准。</div>
 
 <!-- 门店切换 -->
 <div class="store-bar" id="storeBar"></div>
