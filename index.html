@@ -222,6 +222,207 @@
   .none { font-size:12px; color:var(--faint); padding:12px 0; text-align:center; }
 
   .footer { text-align:center; font-size:10px; color:var(--faint); padding:18px 0 28px; letter-spacing:1px; }
+
+  /* ===== 2026 UI polish：更紧凑、更清晰的移动端层级 ===== */
+  :root {
+    --red:#9f3528; --red-deep:#86291f; --red-dark:#6f211a;
+    --gold:#e8c78a; --gold-deep:#c99748;
+    --bg:#f6f3ef; --card:#fff; --line:#ebe5dd;
+    --ink:#292421; --ink-soft:#645a52; --muted:#8a817a; --faint:#aaa19a;
+    --open:#35a36f; --full:#e5a03f; --closed:#df6159;
+    --shadow:0 8px 30px rgba(72,48,32,.075);
+  }
+  html { background:#e9e3dc; }
+  body {
+    min-height:100vh; max-width:680px; margin:0 auto; padding-bottom:env(safe-area-inset-bottom);
+    background:
+      radial-gradient(circle at 100% 8%,rgba(201,151,72,.08),transparent 25%),
+      var(--bg);
+    box-shadow:0 0 60px rgba(55,38,25,.08);
+  }
+  button:focus-visible { outline:3px solid rgba(232,199,138,.8); outline-offset:2px; }
+
+  .loading-mask { max-width:680px; left:50%; right:auto; width:100%; transform:translateX(-50%); }
+  .spinner { width:34px; height:34px; border-width:2px; }
+  .refresh-bar {
+    top:auto; bottom:calc(18px + env(safe-area-inset-bottom)); left:50%; right:auto;
+    width:auto; min-width:148px; max-width:calc(100% - 32px); transform:translateX(-50%);
+    padding:9px 16px; border-radius:999px; background:rgba(244,205,122,.97); color:#614511;
+    box-shadow:0 8px 24px rgba(74,49,12,.18);
+  }
+  .refresh-bar.show { animation:refreshUp .22s ease; }
+  @keyframes refreshUp { from { opacity:0; transform:translate(-50%,12px); } to { opacity:1; transform:translate(-50%,0); } }
+
+  .header {
+    padding:15px 60px 20px; min-height:146px;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    background:
+      radial-gradient(circle at 15% 0%,rgba(255,225,167,.18),transparent 34%),
+      linear-gradient(145deg,#a2382b 0%,#87291f 62%,#702119 100%);
+  }
+  .header::before {
+    top:auto; left:-32px; bottom:-64px; width:160px; height:160px; border-radius:50%;
+    border:1px solid rgba(232,199,138,.13); background:transparent;
+    box-shadow:0 0 0 20px rgba(232,199,138,.035),0 0 0 42px rgba(232,199,138,.025);
+  }
+  .header::after { width:34px; height:2px; opacity:.9; }
+  .header h1 {
+    display:flex; align-items:center; justify-content:center; text-shadow:none;
+  }
+  .brand-logo { width:96px; height:84px; display:block; flex:0 0 auto; overflow:visible; }
+  .header .sub { margin-top:8px; font-size:10px; letter-spacing:1.2px; opacity:.76; }
+  .updated {
+    margin-top:9px; padding:3px 9px; border-radius:999px; font-size:9px; opacity:.72;
+    background:rgba(255,255,255,.08); letter-spacing:.3px;
+  }
+  .refresh-btn {
+    top:14px; right:14px; width:38px; height:38px; border-radius:50%;
+    border:1px solid rgba(255,255,255,.16); background:rgba(255,255,255,.1);
+    font-size:21px; font-weight:300;
+  }
+
+  .notice {
+    margin:12px 12px 10px; padding:13px 14px 12px; border-radius:18px;
+    background:rgba(255,255,255,.82); border:1px solid #e8e0d6;
+    color:#756b63; font-size:11px; line-height:1.55; box-shadow:0 5px 20px rgba(65,45,31,.045);
+  }
+  .notice-head { display:flex; align-items:center; gap:7px; margin-bottom:10px; color:#4c433d; }
+  .notice-icon {
+    width:18px; height:18px; flex:0 0 auto;
+    display:flex; align-items:center; justify-content:center; border-radius:50%;
+    background:#b87b31; color:#fff; font:700 11px/1 Georgia,serif;
+  }
+  .notice-head b { font-size:12px; color:#4c433d; }
+  .notice-rules { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  .notice-rule {
+    display:flex; align-items:baseline; justify-content:center; gap:5px;
+    padding:8px 7px; border-radius:11px; background:#f7f4ef; color:#756b63;
+  }
+  .notice-rule strong { color:#963328; font-size:13px; }
+  .notice-rule.service { background:#fff6e7; color:#86662e; }
+  .notice-rule.service strong { color:#b27725; }
+  .notice-foot { margin-top:8px; color:#9a9189; font-size:9px; text-align:center; }
+
+  .store-bar {
+    top:0; gap:7px; padding:10px 12px 11px; border-top:1px solid rgba(255,255,255,.75);
+    border-bottom-color:#eae4dc; background:rgba(250,248,245,.9);
+    box-shadow:0 5px 18px rgba(65,44,28,.055);
+  }
+  .store-btn {
+    min-height:38px; padding:8px 15px; border-radius:12px; background:#fff;
+    border-color:#ebe5de; color:#746960; font-size:11px; font-weight:500;
+    box-shadow:0 2px 8px rgba(55,39,28,.035);
+  }
+  .store-btn:first-child::before { content:"▦"; margin-right:5px; font-size:12px; }
+  .store-btn.active {
+    background:linear-gradient(135deg,#ad3d2e,#8f2f24); border-color:transparent;
+    box-shadow:0 5px 14px rgba(143,47,36,.24); color:#fff;
+  }
+
+  .banner {
+    margin:12px 12px 0; padding:13px 15px; border-radius:16px;
+    background:#fff9e9; border-color:#ecd7a9; border-left-width:3px;
+    color:#796124; box-shadow:0 5px 18px rgba(109,78,20,.045);
+  }
+  .banner .t { color:#705516; font-size:12px; }
+  .banner .t::before { content:""; width:7px; height:7px; border-radius:50%; background:#dca333; box-shadow:0 0 0 4px rgba(220,163,51,.12); }
+
+  .card {
+    margin:12px; padding:17px; border-radius:20px; border-color:rgba(235,229,221,.9);
+    box-shadow:var(--shadow);
+  }
+  .card h2 { margin-bottom:13px; gap:9px; color:#332d29; font-size:15px; letter-spacing:.1px; }
+  .card h2 .dot { width:8px; height:8px; box-shadow:0 0 0 4px rgba(0,0,0,.035); }
+  .card h2 .store-name {
+    max-width:50%; overflow:hidden; text-overflow:ellipsis; color:#9a918a;
+    background:#f7f4f0; padding:3px 8px; border-radius:8px;
+  }
+
+  .chips-wrap { gap:7px; padding-left:0; }
+  .closed-day {
+    padding:8px 10px; border-radius:12px; background:#fff9f7; border-color:#efddd8;
+    box-shadow:none;
+  }
+  .closed-day .cd-date { font-size:11px; }
+  .closed-day .m { padding:3px 8px; font-size:9px; letter-spacing:.5px; }
+  .closed-day .m.lunch { background:#568fc8; }
+  .closed-day .m.dinner { background:#8c68ad; }
+
+  .legend {
+    display:grid; grid-template-columns:repeat(4,max-content); justify-content:space-between;
+    gap:7px; margin:0 0 16px; padding:9px 10px; border-radius:12px;
+    background:#faf8f5; font-size:9px;
+  }
+  .legend span { gap:4px; white-space:nowrap; }
+  .legend i { width:10px; height:10px; border-radius:3px; }
+  .legend .i-open { background:#eaf7f0; border:1px solid #91d1b1; }
+  .legend .i-half { background:linear-gradient(to bottom,#f9dfdc 50%,#fbfaf8 50%); border:1px solid #e9c4c0; }
+  .legend .i-full { background:#fff5e7; border:1px solid #e8bd7d; }
+  .legend .i-closed { background:#fff0ef; border:1px solid #e79b96; }
+
+  .availability-summary {
+    display:grid; grid-template-columns:repeat(3,1fr); gap:7px; margin:-2px 0 10px;
+  }
+  .availability-stat {
+    padding:8px 6px; border:1px solid #ebe6df; border-radius:12px;
+    background:#faf8f5; text-align:center; color:#8b8179; font-size:9px;
+  }
+  .availability-stat strong { display:block; margin-bottom:1px; font-size:17px; line-height:1.15; color:#4f4741; }
+  .availability-stat.open strong { color:#27875c; }
+  .availability-stat.partial strong { color:#c4832c; }
+  .availability-stat.closed strong { color:#c94c45; }
+
+  .cal-nav { margin-bottom:13px; }
+  .cal-nav button {
+    min-width:62px; min-height:36px; padding:7px 12px; border-radius:11px;
+    background:#f7f4f0; border:1px solid #eee8e1; color:#776b62; font-size:11px;
+  }
+  .cal-nav .ym { font-size:16px; letter-spacing:.5px; }
+  .cal-head { margin-bottom:7px; color:#aaa19a; font-size:9px; }
+  .cal-head, .cal-grid { gap:5px; }
+  .day {
+    border-radius:11px; background:#fbfaf8; border-color:#eee9e3;
+    box-shadow:none; min-width:0;
+  }
+  .day .d { font-size:13px; }
+  .day .tag { font-size:7px; margin-top:2px; transform:scale(.96); }
+  .day.open { background:#eaf7f0; border-color:#bfe4d1; color:#237951; box-shadow:none; }
+  .day.open .tag { color:#348461; }
+  .day.closed { background:#fff0ef; border-color:#f1c7c4; color:#c94b44; box-shadow:none; }
+  .day.closed .tag { color:#d35b54; }
+  .day.full { background:#fff5e7; border-color:#f1d5ab; color:#b87523; box-shadow:none; }
+  .day.full .tag { color:#c1853d; }
+  .day.today { outline:2px solid #9f3528; outline-offset:1px; }
+  .day.half .half-bar.top, .day.half .half-bar.bottom { background:#f9dfdc; }
+  .day.half-top .d { color:#b9433d; }
+  .day.half-top .tag { color:#b9433d; }
+  .day.half-bottom .d { color:#332d29; }
+  .day.half-bottom .tag { color:#b9433d; }
+
+  .city-group { padding:1px 0 4px; border-bottom:1px solid #f0ebe5; }
+  .city-group:last-child { border-bottom:0; }
+  .city-title { color:#963328; letter-spacing:1px; }
+  .store-sub { margin-left:0; color:#746a62; }
+  .none { padding:18px 0; color:#999089; }
+  #listCard .none { border-radius:13px; background:#f2faf6; color:#3f8764; }
+  .footer { padding:17px 12px calc(26px + env(safe-area-inset-bottom)); color:#aaa19a; letter-spacing:.5px; }
+
+  @media (max-width:360px) {
+    .card { margin:10px; padding:14px; }
+    .notice { margin-left:10px; margin-right:10px; }
+    .store-bar { padding-left:10px; padding-right:10px; }
+    .legend { grid-template-columns:repeat(2,1fr); }
+    .cal-head, .cal-grid { gap:4px; }
+    .day .d { font-size:12px; }
+  }
+  @media (min-width:600px) {
+    .card, .notice, .banner { margin-left:20px; margin-right:20px; }
+    .store-bar { padding-left:20px; padding-right:20px; }
+    .day { border-radius:14px; }
+  }
+  @media (prefers-reduced-motion:reduce) {
+    *, *::before, *::after { animation-duration:.01ms !important; animation-iteration-count:1 !important; scroll-behavior:auto !important; }
+  }
 </style>
 </head>
 <body>
@@ -233,26 +434,42 @@
 </div>
 
 <div class="header">
-  <button class="refresh-btn" id="refreshBtn" onclick="refreshCurrent()" aria-label="刷新档期">🔄</button>
-  <h1>🏮 档期查询</h1>
+  <button class="refresh-btn" id="refreshBtn" onclick="refreshCurrent()" aria-label="刷新档期">↻</button>
+  <h1>
+    <svg class="brand-logo" viewBox="48 52 301 292" role="img" aria-label="叙宴 XUYAN">
+      <defs>
+        <filter id="extractWhiteLogo" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB">
+          <feColorMatrix type="matrix" values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 1.5 1.5 0 -1.5" />
+        </filter>
+      </defs>
+      <image href="xuyan-logo-source.png" x="0" y="0" width="397" height="397" filter="url(#extractWhiteLogo)" />
+    </svg>
+  </h1>
   <div class="sub">红色为不可预约 · 请合理安排时间</div>
   <div class="updated" id="updatedAt"></div>
 </div>
 
 <!-- 温馨提示声明 -->
-<div class="notice">📌 <b>温馨提示：</b>当前在线仅开放 <b>7-14 天</b>档期预约；<b>15-21 天</b>档期如需预订，请联系客服。页面信息仅供参考，实际以客服答复为准。</div>
+<div class="notice">
+  <div class="notice-head"><span class="notice-icon">i</span><b>预约说明</b></div>
+  <div class="notice-rules">
+    <span class="notice-rule"><strong>7–14天</strong>在线预约</span>
+    <span class="notice-rule service"><strong>15–21天</strong>联系客服</span>
+  </div>
+  <div class="notice-foot">页面信息仅供参考，实际档期以客服答复为准</div>
+</div>
 
 <!-- 门店切换 -->
 <div class="store-bar" id="storeBar"></div>
 
 <!-- 更新提醒横幅 -->
 <div class="banner" id="banner">
-  <div class="t">⚠️ 档期有更新</div>
+  <div class="t">档期有更新</div>
   <div id="bannerText"></div>
 </div>
 
 <!-- 不可预约日期（置顶） -->
-<div class="card">
+<div class="card" id="listCard">
   <h2><span class="dot" style="background:#e5645c"></span><span id="listCardTitle">近期不可预约日期</span></h2>
   <div id="closedDays"></div>
 </div>
@@ -260,6 +477,7 @@
 <!-- 日历 -->
 <div class="card" id="calCard">
   <h2><span class="dot" style="background:#4caf7d"></span>预约日历 <span class="store-name" id="curStore"></span></h2>
+  <div class="availability-summary" id="availabilitySummary"></div>
   <div class="legend">
     <span><i class="i-open"></i>可预约</span>
     <span><i class="i-half"></i>部分不可约</span>
@@ -284,6 +502,7 @@
 var DATA_URL = "schedule.json";
 var LS_KEY = "schedule_snapshot_v1";
 var LS_STORE = "schedule_store_v1";
+var LS_STORE_ID = "schedule_store_id_v1";
 var LS_CACHE = "schedule_cache_v1";
 
 var state = {
@@ -298,6 +517,16 @@ var state = {
 function pad(n) { return n < 10 ? "0" + n : "" + n; }
 function fmtDate(d) { return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()); }
 function weekdayCN(d) { return "日一二三四五六"[d.getDay()]; }
+function storeDisplayName(s) { return s.name || s.store_name || ""; }
+function compareStoreOrder(a, b) {
+  var rank = { "上海": 0, "杭州": 1, "深圳": 2 };
+  var an = storeDisplayName(a), bn = storeDisplayName(b);
+  var ac = an.split("·")[0], bc = bn.split("·")[0];
+  var ar = rank[ac] !== undefined ? rank[ac] : 99;
+  var br = rank[bc] !== undefined ? rank[bc] : 99;
+  if (ar !== br) return ar - br;
+  return an.localeCompare(bn, "zh");
+}
 function parseISO(s) {
   var p = s.split("-");
   return new Date(+p[0], +p[1] - 1, +p[2]);
@@ -325,7 +554,9 @@ var DATES_URL = API_BASE + "/schedule/dates";
 var PAGE_LIST_URL = API_BASE + "/schedule/pagination_list";
 var DAY_SCHED_URL = ADMIN_API + "/statistic/day/schedules";
 var DASHBOARD_URL = ADMIN_API + "/statistic/schedule/dashboard/";
-var REQUEST_GAP = 150; // 请求间隔毫秒
+var STORE_CONCURRENCY = 3; // 门店级并发，避免全部门店同时打满浏览器连接
+var REQUEST_TIMEOUT = 12000;
+var apiInFlight = {};
 
 function apiGet(url, params) {
   var qs = "";
@@ -334,14 +565,38 @@ function apiGet(url, params) {
     for (var k in params) parts.push(encodeURIComponent(k) + "=" + encodeURIComponent(params[k]));
     qs = "?" + parts.join("&");
   }
-  return fetch(url + qs, { cache: "no-store" }).then(function (r) {
+  var requestUrl = url + qs;
+  // 同一个 GET 在快速切换门店、自动刷新重叠时只发一次。
+  if (apiInFlight[requestUrl]) return apiInFlight[requestUrl];
+  var controller = typeof AbortController !== "undefined" ? new AbortController() : null;
+  var timer = controller ? setTimeout(function () { controller.abort(); }, REQUEST_TIMEOUT) : null;
+  var request = fetch(requestUrl, {
+    cache: "no-store",
+    signal: controller ? controller.signal : undefined
+  }).then(function (r) {
     if (!r.ok) throw new Error("HTTP " + r.status);
     return r.json();
+  }).then(function (data) {
+    if (timer) clearTimeout(timer);
+    return data;
+  }, function (err) {
+    if (timer) clearTimeout(timer);
+    throw err;
+  });
+  apiInFlight[requestUrl] = request;
+  return request.then(function (data) {
+    delete apiInFlight[requestUrl];
+    return data;
+  }, function (err) {
+    delete apiInFlight[requestUrl];
+    throw err;
   });
 }
 
 // ============ 门店数据缓存（60秒内存缓存，避免重复请求） ============
 var storeCache = {};
+var storeInFlight = {};
+var windowInFlight = {};
 var CACHE_TTL = 60 * 1000; // 60 秒
 
 function cacheGet(key) {
@@ -368,44 +623,68 @@ function runBatch(tasks, maxConcurrent) {
   return Promise.all(workers).then(function () { return results; });
 }
 
+// full_rate 只有 MM.DD：在上一年、当年、下一年中选择距离今天最近的日期。
+// 这样 1 月不会把上一年 12 月误认成当年年底，12 月也能正确识别下一年 1 月。
+function resolveScheduleDate(mmdd, referenceDate) {
+  var parts = String(mmdd || "").split(".");
+  var month = +parts[0], day = +parts[1];
+  var now = referenceDate || new Date();
+  var best = null, bestDistance = Infinity;
+  [now.getFullYear() - 1, now.getFullYear(), now.getFullYear() + 1].forEach(function (year) {
+    var candidate = new Date(year, month - 1, day, 12, 0, 0);
+    if (candidate.getMonth() !== month - 1 || candidate.getDate() !== day) return;
+    var distance = Math.abs(candidate.getTime() - now.getTime());
+    if (distance < bestDistance) { best = candidate; bestDistance = distance; }
+  });
+  return best ? fmtDate(best) : null;
+}
+
 // 从后台 full_rate 拿近期窗口（约25天），避免逐日扫描
-function fetchRecentWindow(storeId) {
+function fetchRecentWindow(storeId, force) {
   var cacheKey = "window_" + storeId;
+  if (windowInFlight[cacheKey]) return windowInFlight[cacheKey];
   var cached = cacheGet(cacheKey);
-  if (cached) return Promise.resolve(cached);
-  return Promise.all([
+  if (cached && !force) return Promise.resolve(cached);
+  var request = Promise.all([
     apiGet(ADMIN_API + "/statistic/schedule/full_rate", { store_id: storeId, banquet_type: 1 }),
     apiGet(ADMIN_API + "/statistic/schedule/full_rate", { store_id: storeId, banquet_type: 2 })
   ]).then(function (res) {
     var lunch = res[0].data || [];
     var dinner = res[1].data || [];
     var dayMap = {};
-    // scheduleTime 格式 "MM.DD"，年份用当前年份（跨年时用当年，后台窗口一般为当年）
-    var yearNow = new Date().getFullYear();
     lunch.forEach(function (x) {
-      var d = x.scheduleTime.split(".");
-      var ds = yearNow + "-" + d[0] + "-" + d[1];
+      var ds = resolveScheduleDate(x.scheduleTime);
+      if (!ds) return;
       if (!dayMap[ds]) dayMap[ds] = {};
       dayMap[ds].lunch = { id: x.scheduleId, booking: x.bookingCount, total: x.totalCount, lock: x.lockCount };
     });
     dinner.forEach(function (x) {
-      var d = x.scheduleTime.split(".");
-      var ds = yearNow + "-" + d[0] + "-" + d[1];
+      var ds = resolveScheduleDate(x.scheduleTime);
+      if (!ds) return;
       if (!dayMap[ds]) dayMap[ds] = {};
       dayMap[ds].dinner = { id: x.scheduleId, booking: x.bookingCount, total: x.totalCount, lock: x.lockCount };
     });
     cacheSet(cacheKey, dayMap);
     return dayMap;
   });
+  windowInFlight[cacheKey] = request;
+  return request.then(function (dayMap) {
+    delete windowInFlight[cacheKey];
+    return dayMap;
+  }, function (err) {
+    delete windowInFlight[cacheKey];
+    throw err;
+  });
 }
 
 // 实时拉取某门店档期状态（后台接口：能看到未对外的完整档期）
 function fetchStoreRealTime(store, force) {
   var cacheKey = "store_" + store.id;
+  if (storeInFlight[cacheKey]) return storeInFlight[cacheKey];
   var cached = cacheGet(cacheKey);
   if (cached && !force) return Promise.resolve(cached);
 
-  return fetchRecentWindow(store.id).then(function (windowMap) {
+  var request = fetchRecentWindow(store.id, force).then(function (windowMap) {
     var todayStr = fmtDate(new Date());
     var dayMap = {};
     // 先放窗口数据
@@ -448,7 +727,9 @@ function fetchStoreRealTime(store, force) {
         var m = dayMap[ds];
         ["lunch", "dinner"].forEach(function (meal) {
           var s = m[meal];
-          if (s && s.id && (s.booking === null || s.scheduleState === undefined)) {
+          // full_rate 已经包含预订、总数和锁位，不再重复请求 dashboard。
+          // scheduleState 不参与业务判定；只有逐日扫描得到的场次才需要补齐统计。
+          if (s && s.id && (s.booking === null || s.total === null || s.lock === null)) {
             dashTasks.push(function () {
               return apiGet(DASHBOARD_URL + s.id, {}).then(function (dr) {
                 var dd = dr.data || {};
@@ -469,6 +750,7 @@ function fetchStoreRealTime(store, force) {
       // 先计算范围：从今天到最后一个有场次的日期
       var allKeys = Object.keys(dayMap).filter(function (ds) { return ds >= todayStr; }).sort();
       var rangeEnd2 = allKeys.length ? allKeys[allKeys.length - 1] : todayStr;
+      if (rangeEnd2 > maxDate) rangeEnd2 = maxDate;
       // 范围内缺失的日期 = 关闭（店休/未开放），与线上一致
       var cursor2 = parseISO(todayStr);
       var endD2 = parseISO(rangeEnd2);
@@ -480,7 +762,7 @@ function fetchStoreRealTime(store, force) {
         cursor2.setDate(cursor2.getDate() + 1);
       }
       Object.keys(dayMap).forEach(function (ds) {
-        if (ds < todayStr) return; // 过去的日期不展示
+        if (ds < todayStr || ds > maxDate) return; // 只组装展示窗口
         var m = dayMap[ds];
         var lunchState = "closed", dinnerState = "closed";
         if (m.lunch && m.lunch.id) {
@@ -521,6 +803,14 @@ function fetchStoreRealTime(store, force) {
       return result;
     });
   });
+  storeInFlight[cacheKey] = request;
+  return request.then(function (result) {
+    delete storeInFlight[cacheKey];
+    return result;
+  }, function (err) {
+    delete storeInFlight[cacheKey];
+    throw err;
+  });
 }
 
 // ============ 门店 ============
@@ -536,14 +826,14 @@ function renderStoreBar() {
   // 汇总按钮
   var allBtn = document.createElement("button");
   allBtn.className = "store-btn" + (state.storeIndex === ALL_STORES ? " active" : "");
-  allBtn.textContent = "📋 全部汇总";
+  allBtn.textContent = "全部汇总";
   allBtn.onclick = function () {
     state.storeIndex = ALL_STORES;
-    try { localStorage.setItem(LS_STORE, ALL_STORES); } catch (e) {}
+    saveStoreSelection();
     renderStoreBar();
     renderAll();
-    // 每次进入汇总：刷新全部门店实时数据
-    refreshAllStores();
+    // 切换视图优先复用 60 秒缓存；手动点刷新才强制重拉。
+    refreshAllStores(false);
   };
   bar.appendChild(allBtn);
   // 各门店按钮
@@ -553,11 +843,10 @@ function renderStoreBar() {
     btn.textContent = s.store_name;
     btn.onclick = function () {
       state.storeIndex = i;
-      try { localStorage.setItem(LS_STORE, i); } catch (e) {}
+      saveStoreSelection();
       renderStoreBar();
       renderAll();
-      // 每次点进该门店：实时刷新最新数据
-      refreshStoreData(s.store_id);
+      refreshStoreData(s.store_id, false);
     };
     bar.appendChild(btn);
   });
@@ -585,6 +874,29 @@ function renderCalendar() {
   var maxDate = fmtDate(new Date(nowD.getTime() + (daysToSunday + 14) * 24 * 3600 * 1000));
   if (maxDate < rangeEnd) rangeEnd = maxDate;
 
+  // 展示窗口档期概览，帮助用户先看总体情况再查看具体日期。
+  var stats = { open: 0, partial: 0, closed: 0 };
+  var statsStart = rangeStart > todayStr ? rangeStart : todayStr;
+  if (statsStart <= rangeEnd) {
+    var statsCursor = parseISO(statsStart);
+    var statsEnd = parseISO(rangeEnd);
+    while (statsCursor <= statsEnd) {
+      var statsDate = fmtDate(statsCursor);
+      var statsLunchExpired = mealExpired(statsDate, "lunch");
+      var statsDinnerExpired = mealExpired(statsDate, "dinner");
+      var statsLunchClosed = statsLunchExpired ? false : !!lunchClosedSet[statsDate];
+      var statsDinnerClosed = statsDinnerExpired ? false : !!dinnerClosedSet[statsDate];
+      if ((statsLunchExpired && statsDinnerExpired) || (statsLunchClosed && statsDinnerClosed)) stats.closed++;
+      else if (statsLunchClosed || statsDinnerClosed) stats.partial++;
+      else stats.open++;
+      statsCursor.setDate(statsCursor.getDate() + 1);
+    }
+  }
+  document.getElementById("availabilitySummary").innerHTML =
+    '<div class="availability-stat open"><strong>' + stats.open + '</strong>可预约天数</div>' +
+    '<div class="availability-stat partial"><strong>' + stats.partial + '</strong>部分可约</div>' +
+    '<div class="availability-stat closed"><strong>' + stats.closed + '</strong>不可预约</div>';
+
   var cells = [];
   for (var i = 0; i < startWeek; i++) cells.push('<div class="day other-month"></div>');
   for (var d = 1; d <= daysInMonth; d++) {
@@ -611,6 +923,7 @@ function renderCalendar() {
       tag = "不可约";
     } else if (inRange && (lc || dc)) {
       cls.push("half");
+      cls.push(lc ? "half-top" : "half-bottom");
       tag = lc ? "午宴不可约" : "晚宴不可约";
       halfBars = lc
         ? '<span class="half-bar top"></span>'
@@ -810,6 +1123,52 @@ function readSavedIndex() {
   } catch (e) { return null; }
 }
 
+function readSavedStoreId() {
+  try {
+    var value = localStorage.getItem(LS_STORE_ID);
+    return value === null || value === "" ? null : value;
+  } catch (e) { return null; }
+}
+
+function saveStoreSelection() {
+  try {
+    localStorage.setItem(LS_STORE, state.storeIndex);
+    if (state.storeIndex === ALL_STORES || !state.data || !curStore()) {
+      localStorage.removeItem(LS_STORE_ID);
+    } else {
+      localStorage.setItem(LS_STORE_ID, String(curStore().store_id));
+    }
+  } catch (e) {}
+}
+
+function findStoreIndexById(stores, storeId) {
+  if (storeId === null || storeId === undefined) return -1;
+  for (var i = 0; i < stores.length; i++) {
+    if (String(stores[i].store_id) === String(storeId)) return i;
+  }
+  return -1;
+}
+
+// 用实时门店列表重建顺序，同时按 store_id 保持用户选中的门店。
+function reconcileStoreList(definitions, preferredStoreId, keepSummary) {
+  if (!state.data || !state.data.stores) return;
+  var existing = {};
+  state.data.stores.forEach(function (s) { existing[String(s.store_id)] = s; });
+  var ordered = definitions.slice().sort(compareStoreOrder).map(function (d) {
+    var item = existing[String(d.id)];
+    if (item) item.store_name = d.name;
+    return item;
+  }).filter(Boolean);
+  state.data.stores = ordered;
+  if (keepSummary) {
+    state.storeIndex = ALL_STORES;
+  } else {
+    var index = findStoreIndexById(ordered, preferredStoreId);
+    state.storeIndex = index >= 0 ? index : 0;
+  }
+  saveStoreSelection();
+}
+
 // 先用上次缓存立即渲染，再后台刷新，避免打开页面白屏
 function renderFromCache() {
   try {
@@ -817,8 +1176,13 @@ function renderFromCache() {
     if (cached && cached.stores && cached.stores.length) {
       state.data = cached;
       var savedIdx = readSavedIndex();
+      var savedStoreId = readSavedStoreId();
       if (savedIdx === ALL_STORES) state.storeIndex = ALL_STORES;
-      else if (savedIdx !== null && cached.stores[savedIdx]) state.storeIndex = savedIdx;
+      else {
+        var savedStoreIndex = findStoreIndexById(cached.stores, savedStoreId);
+        if (savedStoreIndex >= 0) state.storeIndex = savedStoreIndex;
+        else if (savedIdx !== null && cached.stores[savedIdx]) state.storeIndex = savedIdx;
+      }
       renderStoreBar();
       renderAll();
       document.getElementById("updatedAt").textContent = "更新于 " + (cached.updated_at || "—") + "（缓存）";
@@ -829,9 +1193,9 @@ function renderFromCache() {
 }
 
 function refreshCurrent() {
-  if (state.storeIndex === ALL_STORES) { refreshAllStores(); return; }
+  if (state.storeIndex === ALL_STORES) { refreshAllStores(true); return; }
   var s = curStore();
-  if (s) refreshStoreData(s.store_id);
+  if (s) refreshStoreData(s.store_id, true);
 }
 
 // ============ 页面初始化 ============
@@ -920,19 +1284,79 @@ function saveSnapshot() {
   } catch (e) { /* 忽略 */ }
 }
 
+function realtimeStamp() {
+  var now = new Date();
+  return fmtDate(now) + " " + pad(now.getHours()) + ":" + pad(now.getMinutes()) + "（实时）";
+}
+
+function mergeFreshStore(fresh) {
+  if (!fresh || !state.data || !state.data.stores) return;
+  var stores = state.data.stores;
+  for (var i = 0; i < stores.length; i++) {
+    if (stores[i].store_id === fresh.store_id) {
+      var changes = compareStore(stores[i], fresh);
+      stores[i] = fresh;
+      state.data.changes = (state.data.changes || []).filter(function (c) {
+        return c.store_id !== fresh.store_id;
+      }).concat(changes);
+      return;
+    }
+  }
+  stores.push(fresh);
+}
+
+// 当前门店更新完成后，其余门店静默补齐；不再让顶部“正在更新”一直等待全部门店。
+function refreshOtherStoresInBackground(stores, skipStoreId) {
+  var tasks = stores.filter(function (s) { return s.id !== skipStoreId; }).map(function (s) {
+    return function () {
+      return fetchStoreRealTime(s, true).then(function (fresh) { mergeFreshStore(fresh); });
+    };
+  });
+  runBatch(tasks, STORE_CONCURRENCY).then(function () {
+    reconcileStoreList(stores, readSavedStoreId(), state.storeIndex === ALL_STORES);
+    state.data.updated_at = realtimeStamp();
+    // 用户可能在后台更新期间切换了视图，结束时同步一次当前画面。
+    applyData();
+  });
+}
+
 function loadData() {
   var now = new Date();
   state.year = now.getFullYear();
   state.month = now.getMonth();
   var savedIdx = readSavedIndex();
+  var savedStoreId = readSavedStoreId();
 
   // 先用缓存立即渲染（避免白屏），再后台拉取最新实时数据
   var hasCache = renderFromCache();
   if (hasCache) { hideLoading(); showRefresh(); }
   else { showLoading(); }
 
+  // 首次访问也先用仓库内的快照秒开，再把当前门店替换成实时数据。
+  var bootstrap = Promise.resolve(hasCache);
+  if (!hasCache) {
+    bootstrap = fetch(DATA_URL, { cache: "no-store" }).then(function (r) {
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      return r.json();
+    }).then(function (json) {
+      json.stores.sort(compareStoreOrder);
+      state.data = json;
+      if (savedIdx === ALL_STORES) state.storeIndex = ALL_STORES;
+      else {
+        var savedStoreIndex = findStoreIndexById(json.stores, savedStoreId);
+        if (savedStoreIndex >= 0) state.storeIndex = savedStoreIndex;
+        else if (savedIdx !== null && json.stores[savedIdx]) state.storeIndex = savedIdx;
+      }
+      hideLoading();
+      showRefresh();
+      applyData();
+      return true;
+    }).catch(function () { return false; });
+  }
+
   // 优先实时拉取最新数据
-  apiGet(CITY_LIST_URL, {}).then(function (cityResp) {
+  bootstrap.then(function (hasUsableData) {
+    return apiGet(CITY_LIST_URL, {}).then(function (cityResp) {
     var stores = [];
     (cityResp.data || []).forEach(function (city) {
       (city.storeHallList || []).forEach(function (s) {
@@ -942,48 +1366,69 @@ function loadData() {
       });
     });
     // 门店排序：上海 → 杭州 → 深圳 → 其他
-    var CITY_RANK = { "上海": 0, "杭州": 1, "深圳": 2 };
-    stores.sort(function (a, b) {
-      var ca = (a.name || "").split("·")[0];
-      var cb = (b.name || "").split("·")[0];
-      var ra = CITY_RANK[ca] !== undefined ? CITY_RANK[ca] : 99;
-      var rb = CITY_RANK[cb] !== undefined ? CITY_RANK[cb] : 99;
-      if (ra !== rb) return ra - rb;
-      return (a.name || "").localeCompare(b.name || "", "zh");
-    });
+    stores.sort(compareStoreOrder);
     if (!stores.length) throw new Error("门店列表为空");
-    // 逐个门店实时拉取档期
-    var tasks = stores.map(function (st, i) {
-      return new Promise(function (resolve) {
-        setTimeout(function () {
-          fetchStoreRealTime(st).then(function (data) { resolve(data); }).catch(function () { resolve(null); });
-        }, i * REQUEST_GAP);
-      });
+    var keepSummary = state.storeIndex === ALL_STORES;
+    var preferredStoreId = savedStoreId;
+    if (preferredStoreId === null && savedIdx !== null && savedIdx !== ALL_STORES && curStore()) {
+      preferredStoreId = curStore().store_id; // 兼容旧版只保存索引的用户
+    }
+    reconcileStoreList(stores, preferredStoreId, keepSummary);
+    // 有本地缓存时，先只刷新用户正在看的门店；其余门店在后台静默补齐。
+    if (hasUsableData && state.storeIndex !== ALL_STORES) {
+      var selected = curStore();
+      var selectedDef = stores.filter(function (s) { return selected && s.id === selected.store_id; })[0];
+      if (!selectedDef && selected) selectedDef = { id: selected.store_id, name: selected.store_name };
+      if (selectedDef) {
+        return refreshStoreData(selectedDef.id, true).then(function () {
+          refreshOtherStoresInBackground(stores, selectedDef.id);
+        });
+      }
+    }
+    if (hasUsableData && state.storeIndex === ALL_STORES) {
+      return refreshAllStores(true, stores);
+    }
+
+    // 首次访问没有缓存：限制门店级并发，取消原先逐店 150ms 的固定等待。
+    var tasks = stores.map(function (st) {
+      return function () {
+        return fetchStoreRealTime(st).catch(function () { return null; });
+      };
     });
-    return Promise.all(tasks).then(function (results) {
+    return runBatch(tasks, STORE_CONCURRENCY).then(function (results) {
       var realStores = results.filter(Boolean);
       if (!realStores.length) throw new Error("实时数据获取失败");
       var prevData = readPrevData();
       state.data = {
-        updated_at: fmtDate(new Date()) + " " + pad(new Date().getHours()) + ":" + pad(new Date().getMinutes()) + "（实时）",
+        updated_at: realtimeStamp(),
         stores: realStores,
         changes: compareAllStores(prevData, { stores: realStores })
       };
       if (savedIdx === ALL_STORES) state.storeIndex = ALL_STORES;
-      else if (savedIdx !== null && realStores[savedIdx]) state.storeIndex = savedIdx;
+      else {
+        var realStoreIndex = findStoreIndexById(realStores, savedStoreId);
+        if (realStoreIndex >= 0) state.storeIndex = realStoreIndex;
+        else if (savedIdx !== null && realStores[savedIdx]) state.storeIndex = savedIdx;
+      }
       hideLoading();
       hideRefresh();
       applyData();
     });
+  });
   }).catch(function () {
     // 实时失败：回退静态 schedule.json
     return fetch(DATA_URL, { cache: "no-store" }).then(function (r) {
       if (!r.ok) throw new Error("HTTP " + r.status);
       return r.json();
     }).then(function (json) {
+      json.stores.sort(compareStoreOrder);
       state.data = json;
       if (savedIdx === ALL_STORES) state.storeIndex = ALL_STORES;
-      else if (savedIdx !== null && json.stores[savedIdx]) state.storeIndex = savedIdx;
+      else {
+        var fallbackStoreIndex = findStoreIndexById(json.stores, savedStoreId);
+        if (fallbackStoreIndex >= 0) state.storeIndex = fallbackStoreIndex;
+        else if (savedIdx !== null && json.stores[savedIdx]) state.storeIndex = savedIdx;
+      }
       hideLoading();
       hideRefresh();
       applyData();
@@ -996,49 +1441,47 @@ function loadData() {
   });
 }
 
-// 每次点进门店时刷新该店实时数据（强制绕过缓存）
-function refreshStoreData(storeId) {
+// 切换门店可复用短缓存；手动刷新时 force=true。
+function refreshStoreData(storeId, force) {
+  // 仅切换视图且缓存仍有效时不做无意义的“刷新”，也不清空变化提醒。
+  if (!force && !storeInFlight["store_" + storeId] && cacheGet("store_" + storeId)) return Promise.resolve();
   showRefresh();
   var store = { id: storeId, name: "" };
   state.data.stores.forEach(function (s) { if (s.store_id === storeId) { store.name = s.store_name; } });
-  return fetchStoreRealTime(store, true).then(function (fresh) {
+  return fetchStoreRealTime(store, !!force).then(function (fresh) {
     if (!fresh) return;
-    for (var i = 0; i < state.data.stores.length; i++) {
-      if (state.data.stores[i].store_id === storeId) {
-        var prev = state.data.stores[i];
-        state.data.stores[i] = fresh;
-        // 与刷新前的数据对比，更新该店变化
-        var storeChanges = compareStore(prev, fresh);
-        var d = state.data;
-        d.changes = (d.changes || []).filter(function (c) { return c.store_id !== storeId; })
-          .concat(storeChanges);
-        applyChanges(d.changes);
-        saveSnapshot();
-        return;
-      }
-    }
+    mergeFreshStore(fresh);
+    state.data.updated_at = realtimeStamp();
+    applyData();
   }).catch(function () { /* 静默失败，保留旧数据 */ })
     .then(function () { hideRefresh(); });
 }
 
 // 刷新全部门店实时数据（汇总视图用）
-function refreshAllStores() {
-  showRefresh();
+function refreshAllStores(force, definitions) {
   var prevSnapshot = JSON.parse(JSON.stringify(state.data)); // 刷新前基准
-  var tasks = state.data.stores.map(function (s, i) {
-    return new Promise(function (resolve) {
-      setTimeout(function () {
-        fetchStoreRealTime({ id: s.store_id, name: s.store_name }, true).then(function (fresh) {
-          if (fresh) state.data.stores[i] = fresh;
-          resolve();
-        }).catch(function () { resolve(); });
-      }, i * REQUEST_GAP);
-    });
+  var source = definitions || state.data.stores.map(function (s) {
+    return { id: s.store_id, name: s.store_name };
   });
-  return Promise.all(tasks).then(function () {
-    state.data.changes = compareAllStores(prevSnapshot, state.data);
-    applyChanges(state.data.changes);
-    saveSnapshot();
+  var targets = source.map(function (s) {
+    return { id: s.id !== undefined ? s.id : s.store_id, name: s.name || s.store_name };
+  }).sort(compareStoreOrder);
+  var tasks = targets.filter(function (s) {
+    return force || storeInFlight["store_" + s.id] || !cacheGet("store_" + s.id);
+  }).map(function (s) {
+    return function () {
+      return fetchStoreRealTime(s, !!force).then(function (fresh) {
+        if (fresh) mergeFreshStore(fresh);
+      });
+    };
+  });
+  if (!tasks.length) return Promise.resolve();
+  showRefresh();
+  return runBatch(tasks, STORE_CONCURRENCY).then(function () {
+    reconcileStoreList(targets, readSavedStoreId(), state.storeIndex === ALL_STORES);
+    if (force) state.data.changes = compareAllStores(prevSnapshot, state.data);
+    state.data.updated_at = realtimeStamp();
+    applyData();
   }).catch(function () {})
     .then(function () { hideRefresh(); });
 }
