@@ -78,6 +78,7 @@
     transition:background .2s, transform .2s;
   }
   .refresh-btn:active { transform:scale(.9); background:rgba(255,255,255,.32); }
+  .refresh-btn:disabled { cursor:wait; opacity:.72; }
   .refresh-btn.spinning { animation:spin .9s linear infinite; }
 
   /* ===== 门店切换 ===== */
@@ -103,7 +104,7 @@
   .banner {
     display:none; margin:12px 12px 0; padding:13px 15px; border-radius:14px;
     font-size:12px; line-height:1.7; background:#fff8e6;
-    border:1px solid #f0d9a8; border-left:4px solid #e8b43c; color:#8a6d1d;
+    border:1px solid #e8cf96; color:#8a6d1d;
   }
   .banner.show { display:block; animation:slideDown .3s ease; }
   @keyframes slideDown { from { opacity:0; transform:translateY(-6px); } to { opacity:1; transform:none; } }
@@ -139,6 +140,7 @@
   .legend .i-half { background:linear-gradient(to bottom,#e5645c 50%,#f4f1ec 50%); border:1px solid #e8e2d8; }
   .legend .i-full { background:#e8a13c; }
   .legend .i-open { background:#4caf7d; }
+  .legend .i-unknown { background:#f2ead7; border:1px solid #d5bb78; }
   .legend .i-normal { background:#f4f1ec; border:1px solid #e8e2d8; }
 
   /* ===== 日历 ===== */
@@ -162,6 +164,8 @@
   .day.closed { background:linear-gradient(160deg,#e5645c,#d9524a); color:#fff; border-color:transparent; box-shadow:0 3px 8px rgba(229,100,92,.32); }
   .day.full { background:linear-gradient(160deg,#e8a13c,#de9430); color:#fff; border-color:transparent; box-shadow:0 3px 8px rgba(232,161,60,.32); }
   .day.open { background:linear-gradient(160deg,#4caf7d,#3e9c6e); color:#fff; border-color:transparent; box-shadow:0 3px 8px rgba(76,175,125,.28); }
+  .day.unknown { background:#f8f3e8; color:#8a6727; border-color:#dfcc9d; box-shadow:none; }
+  .day.unknown .tag { color:#8a6727; font-weight:700; }
   .day.closed .tag, .day.full .tag, .day.open .tag { color:rgba(255,255,255,.94); }
   .day.other-month { visibility:hidden; background:transparent; border:none; box-shadow:none; }
   .day.today { outline:2px solid var(--red); outline-offset:1px; }
@@ -218,6 +222,7 @@
   }
   .closed-day .m.lunch { background:linear-gradient(135deg,#4a8fd4,#3b7cc0); }
   .closed-day .m.dinner { background:linear-gradient(135deg,#8e6bb8,#7b57a8); }
+  .closed-day .m.unknown { background:#a77b2f; }
   .closed-day .m.none { background:#e57373; }
   .none { font-size:12px; color:var(--faint); padding:12px 0; text-align:center; }
 
@@ -238,7 +243,7 @@
     background:
       radial-gradient(circle at 100% 8%,rgba(201,151,72,.08),transparent 25%),
       var(--bg);
-    box-shadow:0 0 60px rgba(55,38,25,.08);
+    box-shadow:0 12px 48px rgba(28,24,20,.08);
   }
   button:focus-visible { outline:3px solid rgba(232,199,138,.8); outline-offset:2px; }
 
@@ -321,7 +326,7 @@
 
   .banner {
     margin:12px 12px 0; padding:13px 15px; border-radius:16px;
-    background:#fff9e9; border-color:#ecd7a9; border-left-width:3px;
+    background:#fff9e9; border-color:#ecd7a9;
     color:#796124; box-shadow:0 5px 18px rgba(109,78,20,.045);
   }
   .banner .t { color:#705516; font-size:12px; }
@@ -349,7 +354,7 @@
   .closed-day .m.dinner { background:#8c68ad; }
 
   .legend {
-    display:grid; grid-template-columns:repeat(4,max-content); justify-content:space-between;
+    display:grid; grid-template-columns:repeat(5,max-content); justify-content:space-between;
     gap:7px; margin:0 0 16px; padding:9px 10px; border-radius:12px;
     background:#faf8f5; font-size:9px;
   }
@@ -359,9 +364,10 @@
   .legend .i-half { background:linear-gradient(to bottom,#f9dfdc 50%,#fbfaf8 50%); border:1px solid #e9c4c0; }
   .legend .i-full { background:#fff5e7; border:1px solid #e8bd7d; }
   .legend .i-closed { background:#fff0ef; border:1px solid #e79b96; }
+  .legend .i-unknown { background:#f8f3e8; border:1px solid #d9c48f; }
 
   .availability-summary {
-    display:grid; grid-template-columns:repeat(3,1fr); gap:7px; margin:-2px 0 10px;
+    display:grid; grid-template-columns:repeat(4,1fr); gap:7px; margin:-2px 0 10px;
   }
   .availability-stat {
     padding:8px 6px; border:1px solid #ebe6df; border-radius:12px;
@@ -371,6 +377,7 @@
   .availability-stat.open strong { color:#27875c; }
   .availability-stat.partial strong { color:#c4832c; }
   .availability-stat.closed strong { color:#c94c45; }
+  .availability-stat.unknown strong { color:#94702f; }
 
   .cal-nav { margin-bottom:13px; }
   .cal-nav button {
@@ -392,6 +399,8 @@
   .day.closed .tag { color:#d35b54; }
   .day.full { background:#fff5e7; border-color:#f1d5ab; color:#b87523; box-shadow:none; }
   .day.full .tag { color:#c1853d; }
+  .day.unknown { background:#f8f3e8; border-color:#dfcc9d; color:#806021; }
+  .day.unknown .tag { color:#806021; }
   .day.today { outline:2px solid #9f3528; outline-offset:1px; }
   .day.half .half-bar.top, .day.half .half-bar.bottom { background:#f9dfdc; }
   .day.half-top .d { color:#b9433d; }
@@ -411,7 +420,7 @@
     .card { margin:10px; padding:14px; }
     .notice { margin-left:10px; margin-right:10px; }
     .store-bar { padding-left:10px; padding-right:10px; }
-    .legend { grid-template-columns:repeat(2,1fr); }
+    .legend { grid-template-columns:repeat(3,1fr); }
     .cal-head, .cal-grid { gap:4px; }
     .day .d { font-size:12px; }
   }
@@ -483,6 +492,7 @@
     <span><i class="i-half"></i>部分不可约</span>
     <span><i class="i-full"></i>已约满</span>
     <span><i class="i-closed"></i>不可预约</span>
+    <span><i class="i-unknown"></i>数据待确认</span>
   </div>
   <div class="cal-nav">
     <button onclick="prevMonth()">‹ 上月</button>
@@ -503,8 +513,13 @@ var DATA_URL = "schedule.json";
 var LS_KEY = "schedule_snapshot_v1";
 var LS_STORE = "schedule_store_v1";
 var LS_STORE_ID = "schedule_store_id_v1";
-// v2：作废旧版按 full_rate 误判出的“满场”缓存。
-var LS_CACHE = "schedule_cache_v2";
+// v3：引入“待确认”状态并作废缺少数据质量字段的旧缓存。
+var LS_CACHE = "schedule_cache_v3";
+var CACHE_MAX_AGE = 6 * 60 * 60 * 1000;
+var DISPLAY_DAYS = 21;
+var AUTO_REFRESH_INTERVAL = 5 * 60 * 1000;
+var VISIBLE_REFRESH_AGE = 2 * 60 * 1000;
+var lastRefreshAttemptAt = 0;
 
 var state = {
   data: null,        // 最新档期数据
@@ -519,8 +534,23 @@ function pad(n) { return n < 10 ? "0" + n : "" + n; }
 function fmtDate(d) { return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()); }
 function weekdayCN(d) { return "日一二三四五六"[d.getDay()]; }
 function storeDisplayName(s) { return s.name || s.store_name || ""; }
+function businessNow() {
+  var parts = new Intl.DateTimeFormat("zh-CN", {
+    timeZone: "Asia/Shanghai", year: "numeric", month: "numeric", day: "numeric",
+    hour: "numeric", minute: "numeric", second: "numeric", hourCycle: "h23"
+  }).formatToParts(new Date());
+  var values = {};
+  parts.forEach(function (p) { if (p.type !== "literal") values[p.type] = Number(p.value); });
+  return new Date(values.year, values.month - 1, values.day, values.hour, values.minute, values.second);
+}
+function todayDate() { return fmtDate(businessNow()); }
+function displayEndDate() {
+  var d = businessNow();
+  d.setDate(d.getDate() + DISPLAY_DAYS - 1);
+  return fmtDate(d);
+}
 function compareStoreOrder(a, b) {
-  var rank = { "上海": 0, "杭州": 1, "深圳": 2 };
+  var rank = { "上海": 0, "杭州": 1, "深圳": 2, "天津": 3, "台州": 4 };
   var an = storeDisplayName(a), bn = storeDisplayName(b);
   var ac = an.split("·")[0], bc = bn.split("·")[0];
   var ar = rank[ac] !== undefined ? rank[ac] : 99;
@@ -539,8 +569,8 @@ var DINNER_DEADLINE = 18 * 60 + 50;   // 18:50
 
 function mealExpired(ds, meal) {
   // ds: 'YYYY-MM-DD'，meal: 'lunch' | 'dinner'
-  if (ds !== fmtDate(new Date())) return false;
-  var now = new Date();
+  if (ds !== todayDate()) return false;
+  var now = businessNow();
   var minutes = now.getHours() * 60 + now.getMinutes();
   if (meal === "lunch") return minutes >= LUNCH_DEADLINE;
   if (meal === "dinner") return minutes >= DINNER_DEADLINE;
@@ -609,28 +639,32 @@ function cacheSet(key, val) {
   storeCache[key] = { t: Date.now(), v: val };
 }
 
-function sessionIsOpen(session) {
-  if (!session || !session.id || session.booking === null || session.booking === undefined ||
+function sessionStatus(session, dayVerified) {
+  if (!session || !session.id) return dayVerified ? "closed" : "unknown";
+  if (session.dashboardError) return "unknown";
+  if (session.booking === null || session.booking === undefined ||
       session.total === null || session.total === undefined ||
-      session.lock === null || session.lock === undefined) return false;
-  // dashboard 返回 1 表示正常开放；full_rate 没有此字段时仍按座位判断。
-  if (session.scheduleState !== null && session.scheduleState !== undefined &&
-      Number(session.scheduleState) !== 1) return false;
+      session.lock === null || session.lock === undefined) return "unknown";
   var booking = Number(session.booking);
   var total = Number(session.total);
   var locked = Number(session.lock);
-  if (!isFinite(booking) || !isFinite(total) || !isFinite(locked) || total <= 0) return false;
-  return booking + locked < total;
+  if (!isFinite(booking) || !isFinite(total) || !isFinite(locked) || total <= 0) return "unknown";
+  // scheduleState 的 0/1 含义与座位开放状态并不一致，最终以 dashboard 席位数为准。
+  return booking + locked < total ? "open" : "full";
 }
 
 // 并发限制：同时最多发 MAX_CONC 个请求
 function runBatch(tasks, maxConcurrent) {
   var idx = 0;
   var results = new Array(tasks.length);
+  results.errors = [];
   function next() {
     if (idx >= tasks.length) return Promise.resolve();
     var i = idx++;
-    return Promise.resolve().then(tasks[i]).then(function (r) { results[i] = r; }).catch(function () { results[i] = null; })
+    return Promise.resolve().then(tasks[i]).then(function (r) { results[i] = r; }).catch(function (err) {
+      results[i] = null;
+      results.errors.push({ index: i, error: err });
+    })
       .then(function () { return next(); });
   }
   var workers = [];
@@ -657,7 +691,10 @@ function resolveScheduleDate(mmdd, referenceDate) {
 // 从后台 full_rate 拿近期窗口（约25天），避免逐日扫描
 function fetchRecentWindow(storeId, force) {
   var cacheKey = "window_" + storeId;
-  if (windowInFlight[cacheKey]) return windowInFlight[cacheKey];
+  if (windowInFlight[cacheKey]) {
+    if (!force) return windowInFlight[cacheKey];
+    return windowInFlight[cacheKey].then(function () { return fetchRecentWindow(storeId, true); }, function () { return fetchRecentWindow(storeId, true); });
+  }
   var cached = cacheGet(cacheKey);
   if (cached && !force) return Promise.resolve(cached);
   var request = Promise.all([
@@ -695,48 +732,64 @@ function fetchRecentWindow(storeId, force) {
 // 实时拉取某门店档期状态（后台接口：能看到未对外的完整档期）
 function fetchStoreRealTime(store, force) {
   var cacheKey = "store_" + store.id;
-  if (storeInFlight[cacheKey]) return storeInFlight[cacheKey];
+  if (storeInFlight[cacheKey]) {
+    if (!force) return storeInFlight[cacheKey];
+    return storeInFlight[cacheKey].then(function () { return fetchStoreRealTime(store, true); }, function () { return fetchStoreRealTime(store, true); });
+  }
   var cached = cacheGet(cacheKey);
   if (cached && !force) return Promise.resolve(cached);
 
-  var request = fetchRecentWindow(store.id, force).then(function (windowMap) {
-    var todayStr = fmtDate(new Date());
+  var windowFailed = false;
+  var request = fetchRecentWindow(store.id, force).catch(function () {
+    windowFailed = true;
+    return {};
+  }).then(function (windowMap) {
+    var todayStr = todayDate();
     var dayMap = {};
-    // 先放窗口数据
-    Object.keys(windowMap).forEach(function (ds) { dayMap[ds] = windowMap[ds]; });
-    // 只扫描显示范围内的日期（本周+2周到maxDate），窗口外的场次才需要 dashboard
-    var nowD = new Date();
-    var daysToSunday = (7 - nowD.getDay()) % 7;
-    var maxDate = fmtDate(new Date(nowD.getTime() + (daysToSunday + 14) * 24 * 3600 * 1000));
+    Object.keys(windowMap).forEach(function (ds) {
+      var source = windowMap[ds] || {};
+      dayMap[ds] = {
+        lunch: source.lunch ? Object.assign({}, source.lunch) : null,
+        dinner: source.dinner ? Object.assign({}, source.dinner) : null,
+        dayVerified: false
+      };
+    });
+    var maxDate = displayEndDate();
     var scanDays = [];
     var cursor = parseISO(todayStr);
     var endD = parseISO(maxDate);
     while (cursor <= endD) {
       var ds = fmtDate(cursor);
-      if (!dayMap[ds]) scanDays.push(ds);
+      // full_rate 会遗漏单个餐别；只要当天有任一餐缺失，就用逐日接口补查。
+      if (!dayMap[ds] || !dayMap[ds].lunch || !dayMap[ds].dinner) scanDays.push(ds);
       cursor.setDate(cursor.getDate() + 1);
     }
     var scanTasks = scanDays.map(function (dayStr) {
       return function () {
         return apiGet(DAY_SCHED_URL, { store_id: store.id, date: dayStr }).then(function (r) {
           var items = r.data || [];
-          var m = {};
+          var old = dayMap[dayStr] || {};
+          var m = { lunch: null, dinner: null, dayVerified: true };
           items.forEach(function (it) {
             var meal = it.banquetType === 1 ? "lunch" : (it.banquetType === 2 ? "dinner" : null);
-            if (meal) m[meal] = { id: it.id, booking: null, total: null, lock: null, sessionOnly: true };
+            if (!meal) return;
+            var existing = old[meal];
+            m[meal] = existing && String(existing.id) === String(it.id)
+              ? existing
+              : { id: it.id, booking: null, total: null, lock: null, sessionOnly: true };
           });
           dayMap[dayStr] = m;
+          return dayStr;
+        }).catch(function (err) {
+          var old = dayMap[dayStr] || {};
+          old.dayVerified = false;
+          old.dayError = true;
+          dayMap[dayStr] = old;
+          throw err;
         });
       };
     });
-    // 并发扫描（每批 8 个）
-    return runBatch(scanTasks, 8).then(function () {
-      // 清理：去掉完全没有场次的日期
-      Object.keys(dayMap).forEach(function (ds) {
-        var m = dayMap[ds];
-        if (!m.lunch && !m.dinner) delete dayMap[ds];
-      });
-      // 对缺少 booking 数据的场次拉 dashboard（并发批次）
+    return runBatch(scanTasks, 8).then(function (scanResults) {
       var dashTasks = [];
       Object.keys(dayMap).forEach(function (ds) {
         var m = dayMap[ds];
@@ -757,50 +810,39 @@ function fetchStoreRealTime(store, force) {
                 s.lock = dd.seatLockCount;
                 s.fullDes = dd.fullStateDes;
                 s.scheduleState = dd.scheduleState;
+                s.dashboardVerified = true;
+              }).catch(function (err) {
+                s.dashboardError = true;
+                throw err;
               });
             });
           }
         });
       });
-      return runBatch(dashTasks, 8);
-    }).then(function () {
-      // 组装与线上相同结构（只保留今天及以后）
-      var lunchClosed = [], dinnerClosed = [], open = [], full = [], closed = [];
-      // 先计算范围：从今天到最后一个有场次的日期
-      var allKeys = Object.keys(dayMap).filter(function (ds) { return ds >= todayStr; }).sort();
-      var rangeEnd2 = allKeys.length ? allKeys[allKeys.length - 1] : todayStr;
-      if (rangeEnd2 > maxDate) rangeEnd2 = maxDate;
-      // 范围内缺失的日期 = 关闭（店休/未开放），与线上一致
+      return runBatch(dashTasks, 8).then(function (dashResults) {
+        return { scanErrors: scanResults.errors.length, dashErrors: dashResults.errors.length };
+      });
+    }).then(function (errors) {
+      var lunchClosed = [], dinnerClosed = [], lunchUnknown = [], dinnerUnknown = [];
+      var open = [], full = [], closed = [], unknown = [];
       var cursor2 = parseISO(todayStr);
-      var endD2 = parseISO(rangeEnd2);
+      var endD2 = parseISO(maxDate);
       while (cursor2 <= endD2) {
         var ds2 = fmtDate(cursor2);
-        if (!dayMap[ds2]) {
-          lunchClosed.push(ds2); dinnerClosed.push(ds2); closed.push(ds2);
-        }
+        var m = dayMap[ds2] || { dayVerified: false, dayError: true };
+        var lunchState = sessionStatus(m.lunch, !!m.dayVerified);
+        var dinnerState = sessionStatus(m.dinner, !!m.dayVerified);
+        if (lunchState === "closed" || lunchState === "full") lunchClosed.push(ds2);
+        if (dinnerState === "closed" || dinnerState === "full") dinnerClosed.push(ds2);
+        if (lunchState === "unknown") lunchUnknown.push(ds2);
+        if (dinnerState === "unknown") dinnerUnknown.push(ds2);
+        if (lunchState === "open" || dinnerState === "open") open.push(ds2);
+        else if (lunchState === "unknown" || dinnerState === "unknown") unknown.push(ds2);
+        else if (lunchState === "full" || dinnerState === "full") full.push(ds2);
+        else closed.push(ds2);
         cursor2.setDate(cursor2.getDate() + 1);
       }
-      Object.keys(dayMap).forEach(function (ds) {
-        if (ds < todayStr || ds > maxDate) return; // 只组装展示窗口
-        var m = dayMap[ds];
-        var lunchState = "closed", dinnerState = "closed";
-        if (m.lunch && m.lunch.id) {
-          if (sessionIsOpen(m.lunch)) {
-            lunchState = "open";
-          } else lunchState = "full";
-        }
-        if (m.dinner && m.dinner.id) {
-          if (sessionIsOpen(m.dinner)) {
-            dinnerState = "open";
-          } else dinnerState = "full";
-        }
-        if (lunchState !== "open") lunchClosed.push(ds);
-        if (dinnerState !== "open") dinnerClosed.push(ds);
-        if (lunchState === "open" || dinnerState === "open") open.push(ds);
-        else if (lunchState === "full" || dinnerState === "full") full.push(ds);
-        else closed.push(ds);
-      });
-      var allDays = Object.keys(dayMap).sort();
+      var errorCount = errors.scanErrors + errors.dashErrors;
       return {
         store_id: store.id,
         store_name: store.name,
@@ -809,10 +851,17 @@ function fetchStoreRealTime(store, force) {
         closed_dates: closed.sort(),
         lunch_closed_dates: lunchClosed.sort(),
         dinner_closed_dates: dinnerClosed.sort(),
+        unknown_dates: unknown.sort(),
+        lunch_unknown_dates: lunchUnknown.sort(),
+        dinner_unknown_dates: dinnerUnknown.sort(),
         range_start: todayStr,
-        range_end: rangeEnd2,
+        range_end: maxDate,
         realtime: true,
-        backend: true
+        backend: true,
+        data_quality: errorCount ? "partial" : "complete",
+        error_count: errorCount,
+        window_fallback: windowFailed,
+        verified_at: realtimeStamp()
       };
     }).then(function (result) {
       cacheSet(cacheKey, result);
@@ -877,21 +926,20 @@ function renderCalendar() {
   var daysInMonth = new Date(state.year, state.month + 1, 0).getDate();
   var startWeek = first.getDay();
   var s = curStore();
-  var lunchClosedSet = {}, dinnerClosedSet = {};
+  var lunchClosedSet = {}, dinnerClosedSet = {}, lunchUnknownSet = {}, dinnerUnknownSet = {};
   (s.lunch_closed_dates || []).forEach(function (d) { lunchClosedSet[d] = 1; });
   (s.dinner_closed_dates || []).forEach(function (d) { dinnerClosedSet[d] = 1; });
+  (s.lunch_unknown_dates || []).forEach(function (d) { lunchUnknownSet[d] = 1; });
+  (s.dinner_unknown_dates || []).forEach(function (d) { dinnerUnknownSet[d] = 1; });
   // 展示范围：范围外的日期不标记（灰色/未开放）
   var rangeStart = s.range_start || "0000-00-00";
   var rangeEnd = s.range_end || "9999-99-99";
-  // 同步列表规则：仅显示今天这周（到本周日）+ 后面 3 整周，超出范围的日期隐藏
-  var todayStr = fmtDate(new Date());
-  var nowD = new Date();
-  var daysToSunday = (7 - nowD.getDay()) % 7;
-  var maxDate = fmtDate(new Date(nowD.getTime() + (daysToSunday + 14) * 24 * 3600 * 1000));
+  var todayStr = todayDate();
+  var maxDate = displayEndDate();
   if (maxDate < rangeEnd) rangeEnd = maxDate;
 
   // 展示窗口档期概览，帮助用户先看总体情况再查看具体日期。
-  var stats = { open: 0, partial: 0, closed: 0 };
+  var stats = { open: 0, partial: 0, closed: 0, unknown: 0 };
   var statsStart = rangeStart > todayStr ? rangeStart : todayStr;
   if (statsStart <= rangeEnd) {
     var statsCursor = parseISO(statsStart);
@@ -900,9 +948,12 @@ function renderCalendar() {
       var statsDate = fmtDate(statsCursor);
       var statsLunchExpired = mealExpired(statsDate, "lunch");
       var statsDinnerExpired = mealExpired(statsDate, "dinner");
-      var statsLunchClosed = statsLunchExpired ? false : !!lunchClosedSet[statsDate];
-      var statsDinnerClosed = statsDinnerExpired ? false : !!dinnerClosedSet[statsDate];
-      if ((statsLunchExpired && statsDinnerExpired) || (statsLunchClosed && statsDinnerClosed)) stats.closed++;
+      var statsLunchClosed = statsLunchExpired || !!lunchClosedSet[statsDate];
+      var statsDinnerClosed = statsDinnerExpired || !!dinnerClosedSet[statsDate];
+      var statsLunchUnknown = !statsLunchExpired && !!lunchUnknownSet[statsDate];
+      var statsDinnerUnknown = !statsDinnerExpired && !!dinnerUnknownSet[statsDate];
+      if (statsLunchUnknown || statsDinnerUnknown) stats.unknown++;
+      else if (statsLunchClosed && statsDinnerClosed) stats.closed++;
       else if (statsLunchClosed || statsDinnerClosed) stats.partial++;
       else stats.open++;
       statsCursor.setDate(statsCursor.getDate() + 1);
@@ -911,7 +962,8 @@ function renderCalendar() {
   document.getElementById("availabilitySummary").innerHTML =
     '<div class="availability-stat open"><strong>' + stats.open + '</strong>可预约天数</div>' +
     '<div class="availability-stat partial"><strong>' + stats.partial + '</strong>部分可约</div>' +
-    '<div class="availability-stat closed"><strong>' + stats.closed + '</strong>不可预约</div>';
+    '<div class="availability-stat closed"><strong>' + stats.closed + '</strong>不可预约</div>' +
+    '<div class="availability-stat unknown"><strong>' + stats.unknown + '</strong>待确认</div>';
 
   var cells = [];
   for (var i = 0; i < startWeek; i++) cells.push('<div class="day other-month"></div>');
@@ -919,9 +971,10 @@ function renderCalendar() {
     var ds = state.year + "-" + pad(state.month + 1) + "-" + pad(d);
     var lExpired = mealExpired(ds, "lunch");
     var dExpired = mealExpired(ds, "dinner");
-    // 过点的餐别直接不显示（不参与状态判定）
-    var lc = lExpired ? false : !!lunchClosedSet[ds];   // 午宴不可约
-    var dc = dExpired ? false : !!dinnerClosedSet[ds];  // 晚宴不可约
+    var lc = lExpired || !!lunchClosedSet[ds];
+    var dc = dExpired || !!dinnerClosedSet[ds];
+    var lu = !lExpired && !!lunchUnknownSet[ds];
+    var du = !dExpired && !!dinnerUnknownSet[ds];
     var cls = ["day"];
     var tag = "";
     var halfBars = "";
@@ -934,6 +987,9 @@ function renderCalendar() {
       // 两餐都已过点：当天不再显示可预订状态
       cls.push("closed");
       tag = "今日已过";
+    } else if (inRange && (lu || du)) {
+      cls.push("unknown");
+      tag = lu && du ? "数据待确认" : (lu ? "午宴待确认" : "晚宴待确认");
     } else if (inRange && lc && dc) {
       cls.push("closed");
       tag = "不可约";
@@ -959,22 +1015,32 @@ function renderCalendar() {
 }
 
 // ============ 列表渲染（单店，横向标签） ============
+function collectIssueDays(s, todayStr, maxDate) {
+  var dayMap = {};
+  function mark(list, key, meal) {
+    (list || []).forEach(function (d) {
+      if (d < todayStr || d > maxDate || mealExpired(d, meal)) return;
+      if (!dayMap[d]) dayMap[d] = {};
+      dayMap[d][key] = true;
+    });
+  }
+  mark(s.lunch_closed_dates, "lunch", "lunch");
+  mark(s.dinner_closed_dates, "dinner", "dinner");
+  mark(s.lunch_unknown_dates, "lunchUnknown", "lunch");
+  mark(s.dinner_unknown_dates, "dinnerUnknown", "dinner");
+  return dayMap;
+}
+
 function renderList() {
   var s = curStore();
   var el = document.getElementById("closedDays");
-  var todayStr = fmtDate(new Date());
-  // 与汇总视图一致：仅显示今天这周（到本周日）+ 后面 3 整周 = 21~28 天
-  var now = new Date();
-  var daysToSunday = (7 - now.getDay()) % 7;
-  var maxDate = fmtDate(new Date(now.getTime() + (daysToSunday + 14) * 24 * 3600 * 1000));
-  // 合并午宴/晚宴不可约日期 -> 按天聚合（仅显示明天起到范围内，过点餐别不显示）
-  var dayMap = {};
-  (s.lunch_closed_dates || []).forEach(function (d) { if (d > todayStr && d <= maxDate && !mealExpired(d, "lunch")) { if (!dayMap[d]) dayMap[d] = {}; dayMap[d].lunch = true; } });
-  (s.dinner_closed_dates || []).forEach(function (d) { if (d > todayStr && d <= maxDate && !mealExpired(d, "dinner")) { if (!dayMap[d]) dayMap[d] = {}; dayMap[d].dinner = true; } });
+  var todayStr = todayDate();
+  var maxDate = displayEndDate();
+  var dayMap = collectIssueDays(s, todayStr, maxDate);
   var days = Object.keys(dayMap).sort();
 
   if (!days.length) {
-    el.innerHTML = '<div class="none">✅ 近期均可预约</div>';
+    el.innerHTML = '<div class="none">近期均可预约</div>';
     return;
   }
   var MAX = 30;
@@ -984,6 +1050,8 @@ function renderList() {
     var meals = [];
     if (dayMap[d].lunch) meals.push('<span class="m lunch">午宴</span>');
     if (dayMap[d].dinner) meals.push('<span class="m dinner">晚宴</span>');
+    if (dayMap[d].lunchUnknown) meals.push('<span class="m unknown">午宴待确认</span>');
+    if (dayMap[d].dinnerUnknown) meals.push('<span class="m unknown">晚宴待确认</span>');
     var label = meals.length ? meals.join("") : '<span class="m none">全天</span>';
     return '<span class="closed-day"><span class="cd-date">' + (dt.getMonth() + 1) + "月" + dt.getDate() + "日 <span class='w'>周" + weekdayCN(dt) + "</span></span><span class='cd-meals'>" + label + "</span></span>";
   }).join("") + "</div>" + (days.length > MAX ? '<div class="none">...共 ' + days.length + " 天不可预约</div>" : "");
@@ -992,35 +1060,33 @@ function renderList() {
 // ============ 列表渲染（汇总视图：按城市/门店整合，仅显示近3周） ============
 function renderAllStores() {
   var el = document.getElementById("closedDays");
-  var todayStr = fmtDate(new Date());
-  // 仅显示：今天这周（到本周日）+ 后面 3 整周 = 21~28 天（取决于今天是周几）
-  var now = new Date();
-  var daysToSunday = (7 - now.getDay()) % 7; // 到本周日的天数（0=周日当天）
-  var maxDate = fmtDate(new Date(now.getTime() + (daysToSunday + 14) * 24 * 3600 * 1000));
-  var CITY_ORDER = ["上海", "杭州", "深圳"];
+  var todayStr = todayDate();
+  var maxDate = displayEndDate();
+  var preferredCities = ["上海", "杭州", "深圳", "天津", "台州"];
   var cityCounts = {};
 
   // 按城市分组
   var groups = {};
   state.data.stores.forEach(function (s) {
     var city = (s.store_name || "").split("·")[0];
-    if (CITY_ORDER.indexOf(city) === -1) return;
     if (!groups[city]) groups[city] = [];
     groups[city].push(s);
+  });
+  var cityOrder = Object.keys(groups).sort(function (a, b) {
+    var ai = preferredCities.indexOf(a), bi = preferredCities.indexOf(b);
+    ai = ai < 0 ? 999 : ai; bi = bi < 0 ? 999 : bi;
+    return ai === bi ? a.localeCompare(b, "zh") : ai - bi;
   });
 
   var html = "";
   var totalDays = 0;
-  CITY_ORDER.forEach(function (city) {
+  cityOrder.forEach(function (city) {
     var stores = groups[city];
     if (!stores) return;
     var cityDays = 0;
     html += '<div class="city-group"><div class="city-title">' + city + '<span class="count" id="cityCount-' + city + '"></span></div>';
     stores.forEach(function (s) {
-      // 聚合该门店不可约日期 -> 按天（明天起 21 天内，过点餐别不显示）
-      var dayMap = {};
-      (s.lunch_closed_dates || []).forEach(function (d) { if (d > todayStr && d <= maxDate && !mealExpired(d, "lunch")) { if (!dayMap[d]) dayMap[d] = {}; dayMap[d].lunch = true; } });
-      (s.dinner_closed_dates || []).forEach(function (d) { if (d > todayStr && d <= maxDate && !mealExpired(d, "dinner")) { if (!dayMap[d]) dayMap[d] = {}; dayMap[d].dinner = true; } });
+      var dayMap = collectIssueDays(s, todayStr, maxDate);
       var days = Object.keys(dayMap).sort();
       if (!days.length) return;
       cityDays += days.length;
@@ -1033,6 +1099,8 @@ function renderAllStores() {
         var meals = [];
         if (dayMap[d].lunch) meals.push('<span class="m lunch">午宴</span>');
         if (dayMap[d].dinner) meals.push('<span class="m dinner">晚宴</span>');
+        if (dayMap[d].lunchUnknown) meals.push('<span class="m unknown">午宴待确认</span>');
+        if (dayMap[d].dinnerUnknown) meals.push('<span class="m unknown">晚宴待确认</span>');
         var label = meals.length ? meals.join("") : '<span class="m none">全天</span>';
         html += '<span class="closed-day"><span class="cd-date">' + (dt.getMonth() + 1) + "月" + dt.getDate() + "日 <span class='w'>周" + weekdayCN(dt) + "</span></span><span class='cd-meals'>" + label + "</span></span>";
       });
@@ -1045,7 +1113,7 @@ function renderAllStores() {
     cityCounts[city] = cityDays;
   });
 
-  el.innerHTML = totalDays ? html : '<div class="none">✅ 近期均可预约</div>';
+  el.innerHTML = totalDays ? html : '<div class="none">近期均可预约</div>';
   // 填充城市统计徽标
   Object.keys(cityCounts).forEach(function (c) {
     var el2 = document.getElementById("cityCount-" + c);
@@ -1060,24 +1128,26 @@ function compareStore(prevStore, curStoreData) {
   if (!prevStore || !curStoreData) return changes;
   var storeId = curStoreData.store_id;
   // 只对比展示范围内的日期（本周+2周）
-  var todayStr = fmtDate(new Date());
-  var nowD = new Date();
-  var daysToSunday = (7 - nowD.getDay()) % 7;
-  var maxDate = fmtDate(new Date(nowD.getTime() + (daysToSunday + 14) * 24 * 3600 * 1000));
+  var todayStr = todayDate();
+  var maxDate = displayEndDate();
   ["lunch", "dinner"].forEach(function (meal) {
     var prevList = prevStore[meal + "_closed_dates"] || [];
     var curList = curStoreData[meal + "_closed_dates"] || [];
-    var prevSet = {}, curSet = {};
+    var prevUnknownList = prevStore[meal + "_unknown_dates"] || [];
+    var curUnknownList = curStoreData[meal + "_unknown_dates"] || [];
+    var prevSet = {}, curSet = {}, prevUnknown = {}, curUnknown = {};
     prevList.forEach(function (d) { prevSet[d] = 1; });
     curList.forEach(function (d) { curSet[d] = 1; });
+    prevUnknownList.forEach(function (d) { prevUnknown[d] = 1; });
+    curUnknownList.forEach(function (d) { curUnknown[d] = 1; });
     var mealName = meal === "lunch" ? "午宴" : "晚宴";
     // 新增不可约：之前可约/未开放 → 现在不可约（仅范围内）
     curList.forEach(function (d) {
-      if (d > todayStr && d <= maxDate && !prevSet[d]) changes.push({ store_id: storeId, date: d, status: "closed", detail: "新增不可约（" + mealName + "）" });
+      if (d >= todayStr && d <= maxDate && !mealExpired(d, meal) && !prevSet[d] && !prevUnknown[d] && !curUnknown[d]) changes.push({ store_id: storeId, date: d, status: "closed", detail: "新增不可约（" + mealName + "）" });
     });
     // 恢复可约：之前不可约 → 现在可约（仅范围内）
     prevList.forEach(function (d) {
-      if (d > todayStr && d <= maxDate && !curSet[d]) changes.push({ store_id: storeId, date: d, status: "open", detail: "恢复可约（" + mealName + "）" });
+      if (d >= todayStr && d <= maxDate && !mealExpired(d, meal) && !curSet[d] && !prevUnknown[d] && !curUnknown[d]) changes.push({ store_id: storeId, date: d, status: "open", detail: "恢复可约（" + mealName + "）" });
     });
   });
   return changes;
@@ -1124,12 +1194,12 @@ function hideLoading() { document.getElementById("loadingMask").classList.add("h
 function showRefresh() {
   document.getElementById("refreshBar").classList.add("show");
   var b = document.getElementById("refreshBtn");
-  if (b) b.classList.add("spinning");
+  if (b) { b.classList.add("spinning"); b.disabled = true; }
 }
 function hideRefresh() {
   document.getElementById("refreshBar").classList.remove("show");
   var b = document.getElementById("refreshBtn");
-  if (b) b.classList.remove("spinning");
+  if (b) { b.classList.remove("spinning"); b.disabled = false; }
 }
 
 function readSavedIndex() {
@@ -1165,6 +1235,37 @@ function findStoreIndexById(stores, storeId) {
   return -1;
 }
 
+function makeUnknownStore(definition, reason) {
+  var unknownDates = [];
+  var cursor = parseISO(todayDate());
+  var end = parseISO(displayEndDate());
+  while (cursor <= end) {
+    unknownDates.push(fmtDate(cursor));
+    cursor.setDate(cursor.getDate() + 1);
+  }
+  return {
+    store_id: definition.id,
+    store_name: definition.name,
+    open_dates: [], full_dates: [], closed_dates: [],
+    lunch_closed_dates: [], dinner_closed_dates: [],
+    unknown_dates: unknownDates.slice(),
+    lunch_unknown_dates: unknownDates.slice(), dinner_unknown_dates: unknownDates.slice(),
+    range_start: todayDate(), range_end: displayEndDate(),
+    data_quality: "unavailable", refresh_error: true, error_message: reason || "实时数据获取失败"
+  };
+}
+
+function markStoreRefreshFailed(storeId, message) {
+  if (!state.data || !state.data.stores) return;
+  state.data.stores.forEach(function (s) {
+    if (String(s.store_id) === String(storeId)) {
+      s.data_quality = "stale";
+      s.refresh_error = true;
+      s.error_message = message || "实时数据获取失败";
+    }
+  });
+}
+
 // 用实时门店列表重建顺序，同时按 store_id 保持用户选中的门店。
 function reconcileStoreList(definitions, preferredStoreId, keepSummary) {
   if (!state.data || !state.data.stores) return;
@@ -1172,9 +1273,12 @@ function reconcileStoreList(definitions, preferredStoreId, keepSummary) {
   state.data.stores.forEach(function (s) { existing[String(s.store_id)] = s; });
   var ordered = definitions.slice().sort(compareStoreOrder).map(function (d) {
     var item = existing[String(d.id)];
-    if (item) item.store_name = d.name;
-    return item;
-  }).filter(Boolean);
+    if (item) {
+      item.store_name = d.name;
+      return item;
+    }
+    return makeUnknownStore(d, "该门店暂未取得实时数据");
+  });
   state.data.stores = ordered;
   if (keepSummary) {
     state.storeIndex = ALL_STORES;
@@ -1189,7 +1293,10 @@ function reconcileStoreList(definitions, preferredStoreId, keepSummary) {
 function renderFromCache() {
   try {
     var cached = JSON.parse(localStorage.getItem(LS_CACHE));
-    if (cached && cached.stores && cached.stores.length) {
+    var cacheAge = cached && cached._cached_at ? Date.now() - Number(cached._cached_at) : Infinity;
+    if (cached && cached.stores && cached.stores.length && cacheAge >= 0 && cacheAge <= CACHE_MAX_AGE) {
+      cached.data_source = "cache";
+      cached.stores.forEach(function (s) { s.data_quality = "stale"; });
       state.data = cached;
       var savedIdx = readSavedIndex();
       var savedStoreId = readSavedStoreId();
@@ -1201,17 +1308,19 @@ function renderFromCache() {
       }
       renderStoreBar();
       renderAll();
-      document.getElementById("updatedAt").textContent = "更新于 " + (cached.updated_at || "—") + "（缓存）";
+      document.getElementById("updatedAt").textContent = "缓存于 " + (cached.updated_at || "—") + " · 正在核验";
       return true;
     }
   } catch (e) {}
   return false;
 }
 
-function refreshCurrent() {
-  if (state.storeIndex === ALL_STORES) { refreshAllStores(true); return; }
+function refreshCurrent(force) {
+  var shouldForce = force === undefined ? true : !!force;
+  if (state.storeIndex === ALL_STORES) return refreshAllStores(shouldForce);
   var s = curStore();
-  if (s) refreshStoreData(s.store_id, true);
+  if (s) return refreshStoreData(s.store_id, shouldForce);
+  return Promise.resolve();
 }
 
 // ============ 页面初始化 ============
@@ -1220,13 +1329,13 @@ function renderAll() {
   if (state.storeIndex === ALL_STORES) {
     // 汇总视图：隐藏日历，显示整合列表
     calCard.style.display = "none";
-    document.getElementById("listCardTitle").textContent = "全部门店不可预约日期（上海 杭州 深圳）";
+    document.getElementById("listCardTitle").textContent = "全部门店不可预约及待确认日期";
     renderAllStores();
   } else {
     var s = curStore();
     calCard.style.display = "block";
     document.getElementById("curStore").textContent = s.store_name;
-    document.getElementById("listCardTitle").textContent = "近期不可预约日期";
+    document.getElementById("listCardTitle").textContent = "近期不可预约及待确认日期";
     renderCalendar();
     renderList();
   }
@@ -1236,7 +1345,11 @@ function applyData() {
   var d = state.data;
   var isSummary = state.storeIndex === ALL_STORES;
   var s = isSummary ? null : curStore();
-  document.getElementById("updatedAt").textContent = "更新于 " + (d.updated_at || "—");
+  var statusSuffix = "";
+  if (d.data_source === "partial") statusSuffix = " · 部分数据待确认";
+  else if (d.data_source === "snapshot") statusSuffix = " · 历史快照";
+  else if (d.data_source === "cache") statusSuffix = " · 缓存";
+  document.getElementById("updatedAt").textContent = "更新于 " + (d.updated_at || "—") + statusSuffix;
 
   // 变化：服务端/对比生成的 changes（按门店）
   var changed = {};
@@ -1257,6 +1370,9 @@ function renderBanner() {
   var banner = document.getElementById("banner");
   var bannerText = document.getElementById("bannerText");
   var parts = [];
+  var warnings = [];
+  if (d.data_source === "snapshot") warnings.push("实时连接失败，当前显示历史快照，请稍后刷新核验。");
+  if (d.refresh_errors && d.refresh_errors.length) warnings.push(d.refresh_errors.length + " 家门店更新失败，相关日期已标记为待确认。");
   var allChanged = {};
   (d.changes || []).forEach(function (c) {
     if (!allChanged[c.store_id]) allChanged[c.store_id] = {};
@@ -1279,8 +1395,11 @@ function renderBanner() {
     if (sub.length) parts.push("【" + name + "】" + sub.join("；"));
   });
 
-  if (parts.length) {
-    bannerText.innerHTML = "较上次数据，档期有更新：<br>" + parts.join("<br>");
+  if (warnings.length || parts.length) {
+    var blocks = [];
+    if (warnings.length) blocks.push("<b>数据状态：</b>" + warnings.join(" "));
+    if (parts.length) blocks.push("较上次数据，档期有更新：<br>" + parts.join("<br>"));
+    bannerText.innerHTML = blocks.join("<br>");
     banner.className = "banner show";
   } else {
     banner.className = "banner";
@@ -1296,12 +1415,15 @@ function saveSnapshot() {
       }),
       updated_at: state.data.updated_at
     }));
-    localStorage.setItem(LS_CACHE, JSON.stringify(state.data));
+    if (state.data.data_source !== "snapshot") {
+      var cachePayload = Object.assign({}, state.data, { _cached_at: Date.now() });
+      localStorage.setItem(LS_CACHE, JSON.stringify(cachePayload));
+    }
   } catch (e) { /* 忽略 */ }
 }
 
 function realtimeStamp() {
-  var now = new Date();
+  var now = businessNow();
   return fmtDate(now) + " " + pad(now.getHours()) + ":" + pad(now.getMinutes()) + "（实时）";
 }
 
@@ -1321,23 +1443,45 @@ function mergeFreshStore(fresh) {
   stores.push(fresh);
 }
 
+function refreshErrorFor(store, message) {
+  return { store_id: store.id, store_name: store.name, message: message || "实时数据获取失败" };
+}
+
+function setRefreshOutcome(successfulStores, errors) {
+  state.data.refresh_errors = errors || [];
+  var hasPartialStore = (state.data.stores || []).some(function (s) { return s && s.data_quality !== "complete"; });
+  state.data.data_source = state.data.refresh_errors.length || hasPartialStore ? "partial" : "realtime";
+  if (successfulStores && successfulStores.length) state.data.updated_at = realtimeStamp();
+  lastRefreshAttemptAt = Date.now();
+}
+
 // 当前门店更新完成后，其余门店静默补齐；不再让顶部“正在更新”一直等待全部门店。
 function refreshOtherStoresInBackground(stores, skipStoreId) {
-  var tasks = stores.filter(function (s) { return s.id !== skipStoreId; }).map(function (s) {
+  var targets = stores.filter(function (s) { return s.id !== skipStoreId; });
+  var tasks = targets.map(function (s) {
     return function () {
-      return fetchStoreRealTime(s, true).then(function (fresh) { mergeFreshStore(fresh); });
+      return fetchStoreRealTime(s, true).then(function (fresh) { mergeFreshStore(fresh); return fresh; });
     };
   });
-  runBatch(tasks, STORE_CONCURRENCY).then(function () {
+  runBatch(tasks, STORE_CONCURRENCY).then(function (results) {
+    var errors = (state.data.refresh_errors || []).filter(function (e) { return String(e.store_id) === String(skipStoreId); });
+    results.forEach(function (fresh, i) {
+      if (!fresh) {
+        markStoreRefreshFailed(targets[i].id);
+        errors.push(refreshErrorFor(targets[i]));
+      } else if (fresh.data_quality !== "complete") {
+        errors.push(refreshErrorFor(targets[i], "部分日期未能核验"));
+      }
+    });
     reconcileStoreList(stores, readSavedStoreId(), state.storeIndex === ALL_STORES);
-    state.data.updated_at = realtimeStamp();
+    setRefreshOutcome(results.filter(Boolean), errors);
     // 用户可能在后台更新期间切换了视图，结束时同步一次当前画面。
     applyData();
   });
 }
 
 function loadData() {
-  var now = new Date();
+  var now = businessNow();
   state.year = now.getFullYear();
   state.month = now.getMonth();
   var savedIdx = readSavedIndex();
@@ -1356,6 +1500,8 @@ function loadData() {
       return r.json();
     }).then(function (json) {
       json.stores.sort(compareStoreOrder);
+      json.stores.forEach(function (s) { s.data_quality = "snapshot"; });
+      json.data_source = "snapshot";
       state.data = json;
       if (savedIdx === ALL_STORES) state.storeIndex = ALL_STORES;
       else {
@@ -1406,25 +1552,33 @@ function loadData() {
     }
 
     // 首次访问没有缓存：限制门店级并发，取消原先逐店 150ms 的固定等待。
-    var tasks = stores.map(function (st) {
-      return function () {
-        return fetchStoreRealTime(st).catch(function () { return null; });
-      };
-    });
+    var tasks = stores.map(function (st) { return function () { return fetchStoreRealTime(st); }; });
     return runBatch(tasks, STORE_CONCURRENCY).then(function (results) {
       var realStores = results.filter(Boolean);
       if (!realStores.length) throw new Error("实时数据获取失败");
+      var errors = [];
+      var completeStores = stores.map(function (definition, i) {
+        var fresh = results[i];
+        if (!fresh) {
+          errors.push(refreshErrorFor(definition));
+          return makeUnknownStore(definition);
+        }
+        if (fresh.data_quality !== "complete") errors.push(refreshErrorFor(definition, "部分日期未能核验"));
+        return fresh;
+      });
       var prevData = readPrevData();
       state.data = {
         updated_at: realtimeStamp(),
-        stores: realStores,
-        changes: compareAllStores(prevData, { stores: realStores })
+        stores: completeStores,
+        changes: compareAllStores(prevData, { stores: completeStores }),
+        refresh_errors: errors,
+        data_source: errors.length ? "partial" : "realtime"
       };
       if (savedIdx === ALL_STORES) state.storeIndex = ALL_STORES;
       else {
-        var realStoreIndex = findStoreIndexById(realStores, savedStoreId);
+        var realStoreIndex = findStoreIndexById(completeStores, savedStoreId);
         if (realStoreIndex >= 0) state.storeIndex = realStoreIndex;
-        else if (savedIdx !== null && realStores[savedIdx]) state.storeIndex = savedIdx;
+        else if (savedIdx !== null && completeStores[savedIdx]) state.storeIndex = savedIdx;
       }
       hideLoading();
       hideRefresh();
@@ -1438,6 +1592,9 @@ function loadData() {
       return r.json();
     }).then(function (json) {
       json.stores.sort(compareStoreOrder);
+      json.stores.forEach(function (s) { s.data_quality = "snapshot"; });
+      json.data_source = "snapshot";
+      json.refresh_errors = [{ store_id: null, store_name: "全部门店", message: "实时连接失败" }];
       state.data = json;
       if (savedIdx === ALL_STORES) state.storeIndex = ALL_STORES;
       else {
@@ -1465,11 +1622,21 @@ function refreshStoreData(storeId, force) {
   var store = { id: storeId, name: "" };
   state.data.stores.forEach(function (s) { if (s.store_id === storeId) { store.name = s.store_name; } });
   return fetchStoreRealTime(store, !!force).then(function (fresh) {
-    if (!fresh) return;
+    if (!fresh) throw new Error("未取得门店数据");
     mergeFreshStore(fresh);
-    state.data.updated_at = realtimeStamp();
+    var errors = (state.data.refresh_errors || []).filter(function (e) { return String(e.store_id) !== String(storeId); });
+    if (fresh.data_quality !== "complete") errors.push(refreshErrorFor(store, "部分日期未能核验"));
+    setRefreshOutcome([fresh], errors);
     applyData();
-  }).catch(function () { /* 静默失败，保留旧数据 */ })
+    return true;
+  }).catch(function (err) {
+    markStoreRefreshFailed(storeId, err.message);
+    var errors = (state.data.refresh_errors || []).filter(function (e) { return String(e.store_id) !== String(storeId); });
+    errors.push(refreshErrorFor(store, err.message));
+    setRefreshOutcome([], errors);
+    applyData();
+    return false;
+  })
     .then(function () { hideRefresh(); });
 }
 
@@ -1482,23 +1649,41 @@ function refreshAllStores(force, definitions) {
   var targets = source.map(function (s) {
     return { id: s.id !== undefined ? s.id : s.store_id, name: s.name || s.store_name };
   }).sort(compareStoreOrder);
-  var tasks = targets.filter(function (s) {
+  var taskTargets = targets.filter(function (s) {
     return force || storeInFlight["store_" + s.id] || !cacheGet("store_" + s.id);
-  }).map(function (s) {
+  });
+  var tasks = taskTargets.map(function (s) {
     return function () {
       return fetchStoreRealTime(s, !!force).then(function (fresh) {
         if (fresh) mergeFreshStore(fresh);
+        return fresh;
       });
     };
   });
   if (!tasks.length) return Promise.resolve();
   showRefresh();
-  return runBatch(tasks, STORE_CONCURRENCY).then(function () {
+  return runBatch(tasks, STORE_CONCURRENCY).then(function (results) {
+    var errors = [];
+    results.forEach(function (fresh, i) {
+      if (!fresh) {
+        markStoreRefreshFailed(taskTargets[i].id);
+        errors.push(refreshErrorFor(taskTargets[i]));
+      } else if (fresh.data_quality !== "complete") {
+        errors.push(refreshErrorFor(taskTargets[i], "部分日期未能核验"));
+      }
+    });
     reconcileStoreList(targets, readSavedStoreId(), state.storeIndex === ALL_STORES);
     if (force) state.data.changes = compareAllStores(prevSnapshot, state.data);
-    state.data.updated_at = realtimeStamp();
+    setRefreshOutcome(results.filter(Boolean), errors);
     applyData();
-  }).catch(function () {})
+    return errors.length === 0;
+  }).catch(function (err) {
+    state.data.data_source = "partial";
+    state.data.refresh_errors = [refreshErrorFor({ id: null, name: "全部门店" }, err.message)];
+    lastRefreshAttemptAt = Date.now();
+    applyData();
+    return false;
+  })
     .then(function () { hideRefresh(); });
 }
 
@@ -1514,6 +1699,14 @@ function nextMonth() {
 }
 
 loadData();
+
+setInterval(function () {
+  if (document.visibilityState === "visible" && Date.now() - lastRefreshAttemptAt >= AUTO_REFRESH_INTERVAL) refreshCurrent(false);
+}, AUTO_REFRESH_INTERVAL);
+
+document.addEventListener("visibilitychange", function () {
+  if (document.visibilityState === "visible" && Date.now() - lastRefreshAttemptAt >= VISIBLE_REFRESH_AGE) refreshCurrent(false);
+});
 </script>
 </body>
 </html>
