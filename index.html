@@ -503,7 +503,8 @@ var DATA_URL = "schedule.json";
 var LS_KEY = "schedule_snapshot_v1";
 var LS_STORE = "schedule_store_v1";
 var LS_STORE_ID = "schedule_store_id_v1";
-var LS_CACHE = "schedule_cache_v1";
+// v2：作废旧版按 full_rate 误判出的“满场”缓存。
+var LS_CACHE = "schedule_cache_v2";
 
 var state = {
   data: null,        // 最新档期数据
@@ -606,6 +607,20 @@ function cacheGet(key) {
 }
 function cacheSet(key, val) {
   storeCache[key] = { t: Date.now(), v: val };
+}
+
+function sessionIsOpen(session) {
+  if (!session || !session.id || session.booking === null || session.booking === undefined ||
+      session.total === null || session.total === undefined ||
+      session.lock === null || session.lock === undefined) return false;
+  // dashboard 返回 1 表示正常开放；full_rate 没有此字段时仍按座位判断。
+  if (session.scheduleState !== null && session.scheduleState !== undefined &&
+      Number(session.scheduleState) !== 1) return false;
+  var booking = Number(session.booking);
+  var total = Number(session.total);
+  var locked = Number(session.lock);
+  if (!isFinite(booking) || !isFinite(total) || !isFinite(locked) || total <= 0) return false;
+  return booking + locked < total;
 }
 
 // 并发限制：同时最多发 MAX_CONC 个请求
@@ -727,9 +742,13 @@ function fetchStoreRealTime(store, force) {
         var m = dayMap[ds];
         ["lunch", "dinner"].forEach(function (meal) {
           var s = m[meal];
-          // full_rate 已经包含预订、总数和锁位，不再重复请求 dashboard。
-          // scheduleState 不参与业务判定；只有逐日扫描得到的场次才需要补齐统计。
-          if (s && s.id && (s.booking === null || s.total === null || s.lock === null)) {
+          // full_rate 用来快速取得场次窗口，但其 bookingCount 可能大于真实已订座位数。
+          // 缺少统计或初判已满时，用 dashboard 的真实座位数据复核，避免把开放场次误报为不可约。
+          var missingStats = s && (s.booking === null || s.booking === undefined ||
+            s.total === null || s.total === undefined || s.lock === null || s.lock === undefined);
+          var appearsClosed = s && !missingStats &&
+            Number(s.booking || 0) + Number(s.lock || 0) >= Number(s.total || 0);
+          if (s && s.id && (missingStats || appearsClosed)) {
             dashTasks.push(function () {
               return apiGet(DASHBOARD_URL + s.id, {}).then(function (dr) {
                 var dd = dr.data || {};
@@ -766,15 +785,12 @@ function fetchStoreRealTime(store, force) {
         var m = dayMap[ds];
         var lunchState = "closed", dinnerState = "closed";
         if (m.lunch && m.lunch.id) {
-          // 已建场次即可预订：未约满(booking<total) 且 未全锁(lock<total) = 可订
-          if (m.lunch.booking !== null && m.lunch.total !== null &&
-              m.lunch.booking < m.lunch.total && (m.lunch.lock || 0) < m.lunch.total) {
+          if (sessionIsOpen(m.lunch)) {
             lunchState = "open";
           } else lunchState = "full";
         }
         if (m.dinner && m.dinner.id) {
-          if (m.dinner.booking !== null && m.dinner.total !== null &&
-              m.dinner.booking < m.dinner.total && (m.dinner.lock || 0) < m.dinner.total) {
+          if (sessionIsOpen(m.dinner)) {
             dinnerState = "open";
           } else dinnerState = "full";
         }
